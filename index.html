@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fruit Tree Health Check — Sweet Trees Hawaii</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:transparent;width:100%;min-height:100%}
+body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
+
+:root{
+  --f:#1c3d2e;--c:#2a5741;--l:#3d7a5c;--m:#6aab87;
+  --s:#f4a040;--w:#fff;--mist:#d4ead9;
+}
+
+/* ── CARD ── */
+.card{max-width:600px;margin:0 auto;background:var(--f);border-radius:20px;
+  overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35);line-height:1.5}
+
+/* ── TOP BAR ── */
+.tb{display:flex;align-items:center;gap:12px;padding:14px 20px;
+  background:rgba(28,61,46,.95);border-bottom:1px solid rgba(255,255,255,.07)}
+.tb-brand{font-family:'Fraunces',serif;font-size:.85rem;color:var(--mist);flex-shrink:0}
+.tb-track{flex:1;height:4px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden}
+.tb-fill{height:100%;background:linear-gradient(90deg,var(--m),var(--s));width:0%;transition:width .6s}
+.tb-ct{font-size:.75rem;color:rgba(255,255,255,.4);min-width:36px;text-align:right}
+
+/* ── STAGE ── */
+.stage{padding:0 20px 32px}
+.sc{display:none}
+.sc.on{display:block;animation:sIn .4s forwards}
+.sc.out{animation:sOut .28s forwards}
+@keyframes sIn{from{opacity:0;transform:translateX(32px)}to{opacity:1;transform:translateX(0)}}
+@keyframes sOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-28px)}}
+
+/* ── WELCOME ── */
+.wlc{padding:44px 8px 8px;text-align:center}
+.wlc-icon{font-size:3.8rem;display:block;margin-bottom:16px;animation:sw 4s ease-in-out infinite}
+@keyframes sw{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.wlc-ttl{font-family:'Fraunces',serif;font-size:2rem;font-weight:300;color:var(--w);
+  line-height:1.25;margin-bottom:14px}
+.wlc-ttl em{font-style:italic;color:var(--s)}
+.wlc-body{color:rgba(255,255,255,.65);font-size:.98rem;line-height:1.7;
+  max-width:380px;margin:0 auto 24px}
+.pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:30px}
+.pill{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);
+  color:var(--mist);padding:5px 13px;border-radius:99px;font-size:.78rem}
+.btn-start{display:block;width:100%;max-width:320px;margin:0 auto;
+  padding:17px 28px;background:var(--s);border:none;border-radius:12px;
+  color:var(--f);font-family:'Instrument Sans',sans-serif;font-size:1.05rem;
+  font-weight:700;cursor:pointer;transition:background .18s,transform .1s}
+.btn-start:hover{background:#e8922a}
+.btn-start:active{transform:scale(.98)}
+.g-note{margin-top:18px;font-size:.75rem;color:rgba(255,255,255,.3)}
+.g-note a{color:var(--m);text-decoration:none}
+
+/* ── TREE GRID ── */
+.tgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.topt input{display:none}
+.topt label{display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:14px 8px;background:rgba(255,255,255,.055);
+  border:1.5px solid rgba(255,255,255,.09);border-radius:12px;
+  cursor:pointer;transition:.15s;text-align:center}
+.topt label:hover{background:rgba(255,255,255,.1);border-color:rgba(106,171,135,.35)}
+.topt input:checked+label{background:rgba(106,171,135,.16);border-color:var(--m)}
+.te{font-size:2rem}
+.tn{font-size:.8rem;color:rgba(255,255,255,.8);font-weight:500}
+.topt input:checked+label .tn{color:var(--m);font-weight:600}
+
+/* ── QUESTION ── */
+.qtop{padding:36px 0 20px}
+.qctx{font-size:.75rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--m);margin-bottom:10px}
+.qprompt{font-family:'Fraunces',serif;font-size:1.7rem;font-weight:300;
+  color:var(--w);line-height:1.3;margin-bottom:8px}
+.qhint{color:rgba(255,255,255,.45);font-size:.87rem;line-height:1.5}
+
+/* ── OPTIONS ── */
+.opts{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.opt input{display:none}
+.opt label{display:flex;align-items:center;gap:12px;padding:14px 16px;
+  background:rgba(255,255,255,.055);border:1.5px solid rgba(255,255,255,.09);
+  border-radius:12px;cursor:pointer;transition:.15s}
+.opt label:hover{background:rgba(255,255,255,.1);
+  border-color:rgba(106,171,135,.35);transform:translateX(3px)}
+.opt input:checked+label{background:rgba(106,171,135,.16);
+  border-color:var(--m);transform:translateX(5px)}
+.odot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.22);
+  background:transparent;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;transition:.15s}
+.opt input:checked+label .odot{background:var(--m);border-color:var(--m)}
+.opt input:checked+label .odot::after{content:'';width:6px;height:6px;
+  background:#fff;border-radius:50%}
+.oico{font-size:1.25rem;flex-shrink:0}
+.otxt{flex:1;color:rgba(255,255,255,.85);font-size:.92rem;line-height:1.4}
+.osev{font-size:.68rem;font-weight:700;letter-spacing:.05em;
+  padding:2px 8px;border-radius:5px;flex-shrink:0}
+.lc{background:rgba(192,57,43,.22);color:#ff8a80;border:1px solid rgba(192,57,43,.35)}
+.ls{background:rgba(217,119,6,.18);color:#fbbf24;border:1px solid rgba(217,119,6,.28)}
+.lm{background:rgba(234,179,8,.13);color:#fde68a;border:1px solid rgba(234,179,8,.22)}
+.ln{background:rgba(106,171,135,.18);color:#86efac;border:1px solid rgba(106,171,135,.28)}
+.lh{background:rgba(42,122,75,.22);color:#6ee7b7;border:1px solid rgba(42,122,75,.32)}
+
+/* ── EMPATHY ── */
+.emp{background:rgba(244,160,64,.07);border:1px solid rgba(244,160,64,.18);
+  border-radius:10px;padding:12px 14px;display:flex;gap:10px;margin-bottom:16px}
+.eico{font-size:1rem;flex-shrink:0;margin-top:1px}
+.etxt{font-size:.82rem;color:rgba(255,255,255,.52);line-height:1.5}
+
+/* ── NAV ── */
+.nav{display:flex;gap:8px;margin-top:4px}
+.btn-back{padding:13px 18px;background:transparent;
+  border:1.5px solid rgba(255,255,255,.13);border-radius:10px;
+  color:rgba(255,255,255,.45);font-family:'Instrument Sans',sans-serif;
+  font-size:.9rem;cursor:pointer;transition:.18s;flex-shrink:0}
+.btn-back:hover{border-color:rgba(255,255,255,.28);color:rgba(255,255,255,.75)}
+.btn-next{flex:1;padding:14px 20px;background:var(--m);border:none;border-radius:10px;
+  color:#fff;font-family:'Instrument Sans',sans-serif;font-size:.97rem;font-weight:600;
+  cursor:pointer;opacity:.35;pointer-events:none;transition:.18s}
+.btn-next.on{opacity:1;pointer-events:all}
+.btn-next.on:hover{background:var(--l)}
+.btn-next.on:active{transform:scale(.99)}
+
+/* ── PROCESSING ── */
+.proc{padding:60px 8px;text-align:center}
+.proc svg{animation:sp 2s linear infinite;width:80px;height:80px;
+  display:block;margin:0 auto 28px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.psteps{text-align:left;max-width:300px;margin:0 auto}
+.pstep{display:flex;align-items:center;gap:12px;padding:11px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  color:rgba(255,255,255,.28);font-size:.88rem;transition:color .35s}
+.pstep.on{color:rgba(255,255,255,.88)}
+.pstep.dn{color:var(--m)}
+.pdot{width:7px;height:7px;border-radius:50%;
+  background:rgba(255,255,255,.12);flex-shrink:0;transition:background .35s}
+.pstep.on .pdot{background:var(--s);animation:pp 1s ease-in-out infinite}
+.pstep.dn .pdot{background:var(--m);animation:none}
+@keyframes pp{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.5}}
+
+/* ── RESULTS ── */
+.res{padding-top:28px}
+.sbadge{display:flex;gap:18px;align-items:center;background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:20px;margin-bottom:18px}
+.sring{position:relative;width:82px;height:82px;flex-shrink:0}
+.sring svg{transform:rotate(-90deg)}
+.sarc{transition:stroke-dashoffset 1.1s cubic-bezier(.4,0,.2,1)}
+.sinner{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center}
+.snum{font-family:'Fraunces',serif;font-size:1.75rem;font-weight:600;
+  color:var(--w);line-height:1}
+.sden{font-size:.62rem;color:rgba(255,255,255,.35)}
+.stxt{flex:1;min-width:0}
+.slbl{font-size:.7rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:4px}
+.svrd{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:300;
+  color:var(--w);line-height:1.3;margin-bottom:6px}
+.ssub{font-size:.8rem;color:rgba(255,255,255,.48);line-height:1.5}
+.stitle{font-size:.68rem;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:rgba(255,255,255,.28);margin:20px 0 10px}
+.find{display:flex;gap:12px;padding:14px;background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.07);border-radius:10px;margin-bottom:7px}
+.fico{font-size:1.2rem;flex-shrink:0}
+.fnm{font-weight:600;font-size:.87rem;color:rgba(255,255,255,.88);margin-bottom:2px}
+.fdt{font-size:.8rem;color:rgba(255,255,255,.45);line-height:1.5}
+.nstep{display:flex;gap:12px;align-items:flex-start;padding:12px 0;
+  border-bottom:1px solid rgba(255,255,255,.05)}
+.nsnum{width:24px;height:24px;background:var(--c);border-radius:50%;
+  font-size:.75rem;font-weight:700;color:var(--m);display:flex;
+  align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.nst{font-weight:600;font-size:.87rem;color:rgba(255,255,255,.85);margin-bottom:2px}
+.nsd{font-size:.78rem;color:rgba(255,255,255,.4);line-height:1.4}
+
+/* ── CTA BUTTONS ── */
+.cta{margin-top:22px}
+.btn-main{display:block;width:100%;padding:17px 20px;background:var(--s);
+  color:var(--f);border:none;border-radius:12px;font-family:'Instrument Sans',sans-serif;
+  font-size:1rem;font-weight:700;text-align:center;text-decoration:none;
+  cursor:pointer;transition:background .18s;margin-bottom:8px}
+.btn-main:hover{background:#e8922a}
+.btn-alt{display:block;width:100%;padding:14px 20px;background:rgba(255,255,255,.065);
+  color:rgba(255,255,255,.75);border:1.5px solid rgba(255,255,255,.13);
+  border-radius:12px;font-family:'Instrument Sans',sans-serif;font-size:.92rem;
+  font-weight:600;text-align:center;text-decoration:none;cursor:pointer;
+  transition:.18s;margin-bottom:8px}
+.btn-alt:hover{background:rgba(255,255,255,.11)}
+
+/* ── REPORT UNLOCK + GHL SECTION ── */
+.unlock{background:rgba(106,171,135,.09);border:1px solid rgba(106,171,135,.22);
+  border-radius:16px;padding:22px 18px;margin-top:20px;text-align:center}
+.unlock-ttl{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:300;
+  color:var(--w);margin-bottom:6px}
+.unlock-sub{font-size:.82rem;color:rgba(255,255,255,.45);
+  margin-bottom:18px;line-height:1.5}
+.btn-unlock{padding:15px 32px;background:var(--m);border:none;border-radius:10px;
+  color:#fff;font-family:'Instrument Sans',sans-serif;font-size:1rem;
+  font-weight:600;cursor:pointer;transition:background .18s}
+.btn-unlock:hover{background:var(--l)}
+.unlock-note{font-size:.72rem;color:rgba(255,255,255,.28);margin-top:8px}
+
+/* GHL form area — hidden until unlocked */
+.ghl-area{display:none;margin-top:20px;border-top:1px solid rgba(106,171,135,.2);
+  padding-top:20px}
+.ghl-area.visible{display:block;animation:sIn .4s forwards}
+.ghl-area iframe{width:100%;min-height:520px;border:none;
+  border-radius:12px;display:block}
+.ghl-note{text-align:center;font-size:.72rem;color:rgba(255,255,255,.25);
+  margin-top:12px;font-family:'Instrument Sans',sans-serif}
+
+.btn-retake{display:block;width:100%;margin-top:14px;padding:11px;
+  background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:9px;
+  color:rgba(255,255,255,.3);font-family:'Instrument Sans',sans-serif;
+  font-size:.82rem;cursor:pointer;transition:.18s}
+.btn-retake:hover{color:rgba(255,255,255,.55);border-color:rgba(255,255,255,.18)}
+.footer{text-align:center;padding:18px 0 6px;font-size:.72rem;color:rgba(255,255,255,.22)}
+.footer a{color:var(--m);text-decoration:none}
+
+@media(max-width:480px){
+  .wlc-ttl{font-size:1.7rem}
+  .qprompt{font-size:1.45rem}
+  .sbadge{flex-direction:column;text-align:center}
+  .tgrid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- TOP BAR -->
+  <div class="tb">
+    <span class="tb-brand">🌿 Sweet Trees Hawaii</span>
+    <div class="tb-track"><div class="tb-fill" id="stFill"></div></div>
+    <span class="tb-ct" id="stCt"></span>
+  </div>
+
+  <div class="stage">
+
+    <!-- WELCOME -->
+    <div class="sc on" id="ss-welcome">
+      <div class="wlc">
+        <span class="wlc-icon">🥭</span>
+        <h2 class="wlc-ttl">Let's check on<br><em>your fruit tree.</em></h2>
+        <p class="wlc-body">Answer 6 quick questions and get an honest health score — plus exactly what to do next. No expertise needed.</p>
+        <div class="pills">
+          <span class="pill">⏱ 2 minutes</span>
+          <span class="pill">🌺 Built for Hawaii</span>
+          <span class="pill">✅ Free, instant results</span>
+        </div>
+        <button class="btn-start" id="btnStart">Start the check-up →</button>
+        <p class="g-note"><a href="https://share.google/TTzLVYAnM2h1mUmDK" target="_blank" rel="noopener">⭐ 5.0 on Google</a> — trusted by Hawaii homeowners</p>
+      </div>
+    </div>
+
+    <!-- TREE PICKER -->
+    <div class="sc" id="ss-tree">
+      <div class="qtop">
+        <div class="qctx">First — tell us your tree</div>
+        <div class="qprompt">What kind of fruit tree are you checking on?</div>
+        <div class="qhint">Pick the closest match — most health signs are universal across all fruit trees.</div>
+      </div>
+      <div class="tgrid">
+        <div class="topt"><input type="radio" name="treetype" id="tr0" value="mango"><label for="tr0"><span class="te">🥭</span><span class="tn">Mango</span></label></div>
+        <div class="topt"><input type="radio" name="treetype" id="tr1" value="avocado"><label for="tr1"><span class="te">🥑</span><span class="tn">Avocado</span></label></div>
+        <div class="topt"><input type="radio" name="treetype" id="tr2" value="citrus"><label for="tr2"><span class="te">🍋</span><span class="tn">Citrus</span></label></div>
+        <div class="topt"><input type="radio" name="treetype" id="tr3" value="banana"><label for="tr3"><span class="te">🍌</span><span class="tn">Banana</span></label></div>
+        <div class="topt"><input type="radio" name="treetype" id="tr4" value="papaya"><label for="tr4"><span class="te">🍈</span><span class="tn">Papaya</span></label></div>
+        <div class="topt"><input type="radio" name="treetype" id="tr5" value="other"><label for="tr5"><span class="te">🌳</span><span class="tn">Other</span></label></div>
+      </div>
+      <div class="emp"><span class="eico">🌺</span><span class="etxt">Hawaii has incredible fruit tree diversity. Most health indicators are universal — your tree type helps us tailor the advice.</span></div>
+      <div class="nav">
+        <button class="btn-back" id="bB-tree">← Back</button>
+        <button class="btn-next" id="bN-tree">Let's check it out →</button>
+      </div>
+    </div>
+
+    <!-- Q1: FRUIT -->
+    <div class="sc" id="ss-q1">
+      <div class="qtop">
+        <div class="qctx">Question 1 of 5 · Fruit Production</div>
+        <div class="qprompt">How has your tree been producing fruit lately?</div>
+        <div class="qhint">Think about the last full growing season — pick what best describes what you saw.</div>
+      </div>
+      <div class="opts">
+        <div class="opt"><input type="radio" name="fruit" id="f0" value="0"><label for="f0"><span class="odot"></span><span class="oico">💀</span><span class="otxt">No fruit at all — for 2 or more years</span><span class="osev lc">Critical</span></label></div>
+        <div class="opt"><input type="radio" name="fruit" id="f1" value="3"><label for="f1"><span class="odot"></span><span class="oico">❌</span><span class="otxt">No fruit this season — nothing came in</span><span class="osev ls">Serious</span></label></div>
+        <div class="opt"><input type="radio" name="fruit" id="f2" value="6"><label for="f2"><span class="odot"></span><span class="oico">🍂</span><span class="otxt">Fruit started forming but dropped off early</span><span class="osev lm">Moderate</span></label></div>
+        <div class="opt"><input type="radio" name="fruit" id="f3" value="8"><label for="f3"><span class="odot"></span><span class="oico">🟡</span><span class="otxt">Some decent fruit, but not a lot</span><span class="osev ln">Minor</span></label></div>
+        <div class="opt"><input type="radio" name="fruit" id="f4" value="10"><label for="f4"><span class="odot"></span><span class="oico">🍊</span><span class="otxt">Lots of healthy, full-sized fruit</span><span class="osev lh">Healthy</span></label></div>
+      </div>
+      <div class="emp"><span class="eico">💡</span><span class="etxt">Fruit production is the clearest window into your tree's overall health — even when the leaves look fine, the numbers tell the truth.</span></div>
+      <div class="nav">
+        <button class="btn-back" id="bB-q1">← Back</button>
+        <button class="btn-next" id="bN-q1">Next question →</button>
+      </div>
+    </div>
+
+    <!-- Q2: PESTS -->
+    <div class="sc" id="ss-q2">
+      <div class="qtop">
+        <div class="qctx">Question 2 of 5 · Pests & Bugs</div>
+        <div class="qprompt">What do you notice on the leaves and branches?</div>
+        <div class="qhint">Look for insects, sticky residue, tiny bumps on stems, or flies swarming near fruit.</div>
+      </div>
+      <div class="opts">
+        <div class="opt"><input type="radio" name="pest" id="p0" value="0"><label for="p0"><span class="odot"></span><span class="oico">🦟</span><span class="otxt">Flies, ants, and scale insects everywhere</span><span class="osev lc">Critical</span></label></div>
+        <div class="opt"><input type="radio" name="pest" id="p1" value="3"><label for="p1"><span class="odot"></span><span class="oico">🐛</span><span class="otxt">Lots of flies + sticky residue on leaves</span><span class="osev ls">Serious</span></label></div>
+        <div class="opt"><input type="radio" name="pest" id="p2" value="6"><label for="p2"><span class="odot"></span><span class="oico">🔍</span><span class="otxt">Some bugs visible on leaves or branches</span><span class="osev lm">Moderate</span></label></div>
+        <div class="opt"><input type="radio" name="pest" id="p3" value="8"><label for="p3"><span class="odot"></span><span class="oico">🌱</span><span class="otxt">Occasionally see a bug or two — nothing major</span><span class="osev ln">Minor</span></label></div>
+        <div class="opt"><input type="radio" name="pest" id="p4" value="10"><label for="p4"><span class="odot"></span><span class="oico">✨</span><span class="otxt">No visible pests at all</span><span class="osev lh">Healthy</span></label></div>
+      </div>
+      <div class="emp"><span class="eico">🌺</span><span class="etxt">Hawaii's warm climate means pest populations can double in days. Catching this early is the difference between a quick spray and losing the tree.</span></div>
+      <div class="nav">
+        <button class="btn-back" id="bB-q2">← Back</button>
+        <button class="btn-next" id="bN-q2">Next question →</button>
+      </div>
+    </div>
+
+    <!-- Q3: LEAVES -->
+    <div class="sc" id="ss-q3">
+      <div class="qtop">
+        <div class="qctx">Question 3 of 5 · Leaf Health</div>
+        <div class="qprompt">What do the leaves look like right now?</div>
+        <div class="qhint">Step back and look at the overall color — deep green, or something else?</div>
+      </div>
+      <div class="opts">
+        <div class="opt"><input type="radio" name="leaf" id="l0" value="0"><label for="l0"><span class="odot"></span><span class="oico">🍂</span><span class="otxt">Black spots + yellowing everywhere + leaves falling</span><span class="osev lc">Critical</span></label></div>
+        <div class="opt"><input type="radio" name="leaf" id="l1" value="3"><label for="l1"><span class="odot"></span><span class="oico">🟡</span><span class="otxt">Yellow all over with brown, crispy tips</span><span class="osev ls">Serious</span></label></div>
+        <div class="opt"><input type="radio" name="leaf" id="l2" value="6"><label for="l2"><span class="odot"></span><span class="oico">🌿</span><span class="otxt">Patchy yellowing or pale, washed-out green</span><span class="osev lm">Moderate</span></label></div>
+        <div class="opt"><input type="radio" name="leaf" id="l3" value="8"><label for="l3"><span class="odot"></span><span class="oico">💚</span><span class="otxt">Mostly green — slight yellow in new growth only</span><span class="osev ln">Minor</span></label></div>
+        <div class="opt"><input type="radio" name="leaf" id="l4" value="10"><label for="l4"><span class="odot"></span><span class="oico">🌳</span><span class="otxt">Deep, rich green leaves throughout</span><span class="osev lh">Healthy</span></label></div>
+      </div>
+      <div class="emp"><span class="eico">🔬</span><span class="etxt">Leaf color is your tree's report card. Yellow isn't just cosmetic — it's your roots and nutrients trying to tell you something.</span></div>
+      <div class="nav">
+        <button class="btn-back" id="bB-q3">← Back</button>
+        <button class="btn-next" id="bN-q3">Next question →</button>
+      </div>
+    </div>
+
+    <!-- Q4: CANOPY -->
+    <div class="sc" id="ss-q4">
+      <div class="qtop">
+        <div class="qctx">Question 4 of 5 · Canopy & Airflow</div>
+        <div class="qprompt">Stand under your tree and look straight up. What do you see?</div>
+        <div class="qhint">Can you see patches of sky through the branches? A healthy canopy lets light filter through evenly.</div>
+      </div>
+      <div class="opts">
+        <div class="opt"><input type="radio" name="canopy" id="c0" value="0"><label for="c0"><span class="odot"></span><span class="oico">🌑</span><span class="otxt">Completely solid — no sky visible at all</span><span class="osev lc">Critical</span></label></div>
+        <div class="opt"><input type="radio" name="canopy" id="c1" value="3"><label for="c1"><span class="odot"></span><span class="oico">🌒</span><span class="otxt">Very dense — barely any light gets through</span><span class="osev ls">Serious</span></label></div>
+        <div class="opt"><input type="radio" name="canopy" id="c2" value="6"><label for="c2"><span class="odot"></span><span class="oico">🌓</span><span class="otxt">Some light patches, still mostly thick</span><span class="osev lm">Moderate</span></label></div>
+        <div class="opt"><input type="radio" name="canopy" id="c3" value="8"><label for="c3"><span class="odot"></span><span class="oico">🌤</span><span class="otxt">Good airflow, lots of light coming through</span><span class="osev ln">Minor</span></label></div>
+        <div class="opt"><input type="radio" name="canopy" id="c4" value="10"><label for="c4"><span class="odot"></span><span class="oico">☀️</span><span class="otxt">Beautiful open canopy — sky clearly visible</span><span class="osev lh">Healthy</span></label></div>
+      </div>
+      <div class="emp"><span class="eico">✂️</span><span class="etxt">Fruit forms where light reaches. A dense canopy doesn't just look messy — it's actively blocking your next harvest and hiding pests.</span></div>
+      <div class="nav">
+        <button class="btn-back" id="bB-q4">← Back</button>
+        <button class="btn-next" id="bN-q4">Almost there →</button>
+      </div>
+    </div>
+
+    <!-- Q5: TRUNK -->
+    <div class="sc" id="ss-q5">
+      <div class="qtop">
+        <div class="qctx">Question 5 of 5 · Trunk & Base</div>
+        <div class="qprompt">Last one — look at the trunk and the ground right around the base.</div>
+        <div class="qhint">Look for soft spots, oozing sap, mushrooms at the base, deep cracks, or dark staining on the bark.</div>
+      </div>
+      <div class="opts">
+        <div class="opt"><input type="radio" name="trunk" id="t0" value="0"><label for="t0"><span class="odot"></span><span class="oico">⚠️</span><span class="otxt">Soft spots, oozing sap, or mushrooms at the base</span><span class="osev lc">Critical</span></label></div>
+        <div class="opt"><input type="radio" name="trunk" id="t1" value="3"><label for="t1"><span class="odot"></span><span class="oico">🔴</span><span class="otxt">Deep cracks or dark, wet-looking stains on bark</span><span class="osev ls">Serious</span></label></div>
+        <div class="opt"><input type="radio" name="trunk" id="t2" value="6"><label for="t2"><span class="odot"></span><span class="oico">🟠</span><span class="otxt">Some rough or peeling bark patches here and there</span><span class="osev lm">Moderate</span></label></div>
+        <div class="opt"><input type="radio" name="trunk" id="t3" value="8"><label for="t3"><span class="odot"></span><span class="oico">🟢</span><span class="otxt">Mostly normal bark — just a few minor surface marks</span><span class="osev ln">Minor</span></label></div>
+        <div class="opt"><input type="radio" name="trunk" id="t4" value="10"><label for="t4"><span class="odot"></span><span class="oico">💪</span><span class="otxt">Solid, clean, healthy-looking trunk</span><span class="osev lh">Healthy</span></label></div>
+      </div>
+      <div class="emp"><span class="eico">🌱</span><span class="etxt">Last question — you're doing great. The trunk is the highway between roots and canopy. Any damage here affects everything above it.</span></div>
+      <div class="nav">
+        <button class="btn-back" id="bB-q5">← Back</button>
+        <button class="btn-next" id="bN-q5">See my results →</button>
+      </div>
+    </div>
+
+    <!-- PROCESSING -->
+    <div class="sc" id="ss-proc">
+      <div class="proc">
+        <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="5"/>
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#6aab87" stroke-width="5" stroke-dasharray="201" stroke-dashoffset="150" stroke-linecap="round"/>
+        </svg>
+        <div class="psteps">
+          <div class="pstep on" id="sp1"><span class="pdot"></span>Reviewing your answers…</div>
+          <div class="pstep"    id="sp2"><span class="pdot"></span>Calculating health score…</div>
+          <div class="pstep"    id="sp3"><span class="pdot"></span>Identifying problem areas…</div>
+          <div class="pstep"    id="sp4"><span class="pdot"></span>Building your action plan…</div>
+          <div class="pstep"    id="sp5"><span class="pdot"></span>Almost ready…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="sc" id="ss-res">
+      <div class="res">
+        <div class="sbadge">
+          <div class="sring">
+            <svg width="82" height="82" viewBox="0 0 82 82">
+              <circle cx="41" cy="41" r="33" fill="none" stroke="rgba(255,255,255,.09)" stroke-width="7"/>
+              <circle class="sarc" id="stArc" cx="41" cy="41" r="33" fill="none" stroke="#6aab87" stroke-width="7" stroke-linecap="round" stroke-dasharray="207.3" stroke-dashoffset="207.3"/>
+            </svg>
+            <div class="sinner">
+              <span class="snum" id="stNum">0</span>
+              <span class="sden">/100</span>
+            </div>
+          </div>
+          <div class="stxt">
+            <div class="slbl"  id="stLbl"></div>
+            <div class="svrd"  id="stVrd"></div>
+            <div class="ssub"  id="stSub"></div>
+          </div>
+        </div>
+
+        <div class="stitle">What We Found</div>
+        <div id="stFinds"></div>
+
+        <div class="stitle">Your Next Steps</div>
+        <div id="stSteps"></div>
+
+        <div class="cta" id="stCTA"></div>
+
+        <!-- REPORT UNLOCK -->
+        <div class="unlock" id="stUnlockBox">
+          <div class="unlock-ttl">Get your full report + video from Sage</div>
+          <div class="unlock-sub">Enter your info below and we'll send a personalized care plan — free. Local team, no spam.</div>
+          <button class="btn-unlock" id="btnUnlock">📋 Get My Free Report</button>
+          <div class="unlock-note">No spam. Local team. Mililani, HI.</div>
+        </div>
+
+        <!-- GHL FORM — revealed on unlock click -->
+        <div class="ghl-area" id="ghlArea">
+          <!-- ↓↓↓ REPLACE THIS SRC WITH YOUR GHL FORM EMBED URL ↓↓↓ -->
+          <iframe
+            id="ghlIframe"
+            src="about:blank"
+            data-src="https://api.leadconnectorhq.com/widget/form/lLmAbIXvm1V79H3mgTWn"
+            loading="lazy"
+            allowtransparency="true"
+          ></iframe>
+          <div class="ghl-note">Sweet Trees Hawaii · Mililani, HI · No spam, ever.</div>
+        </div>
+
+        <button class="btn-retake" id="btnRetake">↩ Start over</button>
+        <div class="footer">
+          Sweet Trees Hawaii &nbsp;·&nbsp;
+          <a href="https://share.google/TTzLVYAnM2h1mUmDK" target="_blank" rel="noopener">⭐ 5.0 on Google</a>
+          &nbsp;·&nbsp;
+          <a href="https://treecarepro.sweettreeshawaii.com" target="_blank" rel="noopener">treecarepro.sweettreeshawaii.com</a>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /stage -->
+</div><!-- /card -->
+
+<script>
+(function(){
+
+var CATS = ['fruit','pest','leaf','canopy','trunk'];
+var ans  = {};
+var cur  = 'welcome';
+var sd   = {};
+
+/* ── FINDINGS DATA ── */
+var FD = {
+  fruit:{
+    0:{i:'🚨',n:'No fruit in years',         d:'Signals possible root rot, nutrient starvation, or structural damage. Needs urgent professional assessment.'},
+    3:{i:'⚠️',n:'No fruit this season',       d:'Likely over-pruning, root stress, or disrupted pollination. Identifiable and fixable with the right plan.'},
+    6:{i:'🟡',n:'Fruit dropping too early',   d:'Points to water stress, nutrient deficiency, or pest pressure at the flower stage. Treatable with targeted care.'},
+    8:{i:'🟢',n:'Some fruit — below potential',d:'Your tree is producing but not at capacity. A few adjustments can meaningfully increase next season\'s yield.'},
+   10:{i:'✅',n:'Excellent fruit production', d:'Your tree is performing well here.'}
+  },
+  pest:{
+    0:{i:'🚨',n:'Severe infestation',         d:'Active pest colonies causing direct damage. In Hawaii\'s climate, populations spread in days — urgent treatment needed.'},
+    3:{i:'⚠️',n:'High pest pressure',         d:'Sticky honeydew and heavy fly activity signal scale insects. Without intervention this compounds fast.'},
+    6:{i:'🟡',n:'Moderate pest activity',     d:'Early-stage infestation — the ideal time to act while populations are still manageable.'},
+    8:{i:'🟢',n:'Low pest presence',           d:'Minor activity with low risk. Standard monitoring will keep this controlled.'},
+   10:{i:'✅',n:'No pests detected',           d:'Clean. Continue monitoring every few weeks.'}
+  },
+  leaf:{
+    0:{i:'🚨',n:'Severe leaf disease',        d:'Black spots, yellowing, and dropping leaves indicate fungal disease or root rot. Needs immediate diagnosis.'},
+    3:{i:'⚠️',n:'Significant leaf stress',    d:'Widespread yellowing points to root compromise or nutrient starvation — the tree is struggling to sustain itself.'},
+    6:{i:'🟡',n:'Patchy discoloration',       d:'Inconsistent yellowing is usually nutrient imbalance or uneven watering. Highly treatable.'},
+    8:{i:'🟢',n:'Minor yellowing in new growth',d:'Common in young flush, often self-corrects. Worth monitoring as leaves mature.'},
+   10:{i:'✅',n:'Leaves look great',           d:'Deep green throughout — well-nourished and photosynthesizing well.'}
+  },
+  canopy:{
+    0:{i:'🚨',n:'Dangerously overgrown',      d:'Zero light penetration blocks interior fruit development and creates ideal conditions for pests and disease. Structural pruning is urgent.'},
+    3:{i:'⚠️',n:'Very dense canopy',          d:'Poor airflow and minimal light actively suppressing fruit production and creating disease conditions.'},
+    6:{i:'🟡',n:'Canopy needs opening',       d:'Moderate density — thinning would meaningfully increase production and reduce disease risk.'},
+    8:{i:'🟢',n:'Good canopy structure',      d:'Minor thinning may help optimize next season, but overall structure is healthy.'},
+   10:{i:'✅',n:'Ideal canopy',               d:'Excellent airflow and light penetration — perfect for fruit development.'}
+  },
+  trunk:{
+    0:{i:'🚨',n:'Trunk showing decay',        d:'Soft spots, oozing, or fungal growth signal internal rot. Safety concern — inspect immediately.'},
+    3:{i:'⚠️',n:'Bark damage or staining',   d:'Deep cracks and dark staining can indicate bacterial or fungal infection working through the wood.'},
+    6:{i:'🟡',n:'Minor bark irregularities', d:'Some rough patches are normal aging — monitor for expansion or soft spots.'},
+    8:{i:'🟢',n:'Trunk mostly healthy',       d:'Minor surface marks with no structural concern at this stage.'},
+   10:{i:'✅',n:'Trunk in great shape',       d:'Solid and clean — a strong indicator of overall tree health.'}
+  }
+};
+
+/* ── NAVIGATION ── */
+function goto(t){
+  var c = document.getElementById('ss-'+cur);
+  var n = document.getElementById('ss-'+t);
+  if(!n) return;
+  c.classList.add('out');
+  setTimeout(function(){
+    c.classList.remove('on','out');
+    n.classList.add('on');
+    cur = t;
+    upBar();
+    // Scroll card into view (works inside iframe too)
+    document.querySelector('.card').scrollIntoView({behavior:'smooth',block:'start'});
+  }, 280);
+}
+
+function upBar(){
+  var order = ['welcome','tree','q1','q2','q3','q4','q5'];
+  var qi = order.indexOf(cur);
+  var fill = document.getElementById('stFill');
+  var ct   = document.getElementById('stCt');
+  if(cur==='welcome')     { fill.style.width='0%';                       ct.textContent=''; }
+  else if(cur==='tree')   { fill.style.width='8%';                       ct.textContent=''; }
+  else if(qi>=2)          { fill.style.width=((qi-1)/6*100)+'%';         ct.textContent=(qi-1)+' / 5'; }
+  else                    { fill.style.width='100%';                     ct.textContent=''; }
+}
+
+function enableNext(q){
+  var b = document.getElementById('bN-'+q);
+  if(b) b.classList.add('on');
+}
+
+/* ── WIRE BUTTONS ── */
+document.getElementById('btnStart').addEventListener('click',  function(){ goto('tree'); });
+document.getElementById('bB-tree').addEventListener('click',   function(){ goto('welcome'); });
+document.getElementById('bN-tree').addEventListener('click',   function(){ goto('q1'); });
+document.getElementById('bB-q1').addEventListener('click',    function(){ goto('tree'); });
+document.getElementById('bN-q1').addEventListener('click',    function(){ goto('q2'); });
+document.getElementById('bB-q2').addEventListener('click',    function(){ goto('q1'); });
+document.getElementById('bN-q2').addEventListener('click',    function(){ goto('q3'); });
+document.getElementById('bB-q3').addEventListener('click',    function(){ goto('q2'); });
+document.getElementById('bN-q3').addEventListener('click',    function(){ goto('q4'); });
+document.getElementById('bB-q4').addEventListener('click',    function(){ goto('q3'); });
+document.getElementById('bN-q4').addEventListener('click',    function(){ goto('q5'); });
+document.getElementById('bB-q5').addEventListener('click',    function(){ goto('q4'); });
+document.getElementById('bN-q5').addEventListener('click',    function(){ startProc(); });
+document.getElementById('btnUnlock').addEventListener('click', function(){ revealGHL(); });
+document.getElementById('btnRetake').addEventListener('click', function(){ retake(); });
+
+/* ── RADIO LISTENERS ── */
+document.querySelectorAll('input[type="radio"]').forEach(function(r){
+  r.addEventListener('change', function(){
+    ans[this.name] = (this.name==='treetype') ? this.value : parseInt(this.value);
+    var screenId = this.closest('.sc').id.replace('ss-','');
+    enableNext(screenId);
+  });
+});
+
+/* ── PROCESSING ── */
+function startProc(){
+  goto('proc');
+  var ids = ['sp1','sp2','sp3','sp4','sp5'];
+  var dl  = [0, 900, 1700, 2500, 3200];
+  ids.forEach(function(id,i){
+    setTimeout(function(){
+      if(i>0){ var p=document.getElementById(ids[i-1]); p.classList.remove('on'); p.classList.add('dn'); }
+      document.getElementById(id).classList.add('on');
+    }, dl[i]);
+  });
+  setTimeout(function(){
+    document.getElementById('sp5').classList.remove('on');
+    document.getElementById('sp5').classList.add('dn');
+    buildRes();
+    goto('res');
+  }, 4100);
+}
+
+/* ── BUILD RESULTS ── */
+function buildRes(){
+  var total   = CATS.reduce(function(s,k){ return s+(ans[k]||0); }, 0);
+  var score   = Math.round((total/(CATS.length*10))*100);
+  var hasCrit = CATS.some(function(k){ return ans[k]===0; });
+  var serCt   = CATS.filter(function(k){ return ans[k]===3; }).length;
+  var prune   = (ans.canopy||10) <= 6;
+
+  var lvl = (score<=35||hasCrit) ? 'danger' : (score<=65||serCt>=2) ? 'warning' : 'good';
+  var cols = {danger:'#c0392b', warning:'#d97706', good:'#2a7a4b'};
+
+  // Score ring
+  var arc = document.getElementById('stArc');
+  arc.style.stroke = cols[lvl];
+  setTimeout(function(){ arc.style.strokeDashoffset = 207.3-(score/100)*207.3; }, 80);
+  var nm = document.getElementById('stNum');
+  nm.textContent = score; nm.style.color = cols[lvl];
+
+  // Verdict
+  var tree = ans.treetype || 'fruit tree';
+  var V = {
+    danger:  {l:'⚠️ URGENT ATTENTION NEEDED', v:'Your '+tree+' is in serious trouble.',     s:'Multiple critical signals detected. Hawaii\'s climate accelerates these problems fast.'},
+    warning: {l:'🟡 CARE NEEDED',             v:'Your '+tree+' is under real stress.',       s:'Clear signs of problems that will compound without attention. Recovery is very achievable.'},
+    good:    {l:'✅ LOOKING HEALTHY',          v:'Your '+tree+' is in solid shape.',          s:'Great foundations — targeted care could push production even higher this season.'}
+  };
+  var v = V[lvl];
+  var lbl = document.getElementById('stLbl');
+  lbl.style.color = cols[lvl]; lbl.textContent = v.l;
+  document.getElementById('stVrd').textContent = v.v;
+  document.getElementById('stSub').textContent = v.s;
+
+  // Findings
+  var fl = document.getElementById('stFinds'); fl.innerHTML='';
+  CATS.forEach(function(k){
+    var val = ans[k];
+    if(typeof val==='number' && val<10){
+      var f = FD[k][val];
+      var d = document.createElement('div'); d.className='find';
+      d.innerHTML='<span class="fico">'+f.i+'</span><div><div class="fnm">'+f.n+'</div><div class="fdt">'+f.d+'</div></div>';
+      fl.appendChild(d);
+    }
+  });
+
+  // Next steps
+  var steps = [];
+  if(hasCrit||lvl==='danger') steps.push({t:'Schedule an urgent on-site inspection',       d:'Some of what we found requires eyes on the tree this week. A professional assessment is the fastest path to a clear diagnosis.'});
+  if(prune)                   steps.push({t:'Book a canopy pruning service',                d:'Opening the canopy is often the highest-ROI action for a fruit tree — better yields, airflow, and lower disease risk in one visit.'});
+  if((ans.pest||10)<8)        steps.push({t:'Begin a pest management program',              d:'Hawaii\'s warm climate requires consistent monitoring. We\'ll identify the right treatment based on what we find on-site.'});
+                              steps.push({t:'Get your full written care plan',               d:'After a site visit we\'ll provide a written seasonal plan so you always know exactly what your tree needs and when.'});
+
+  var ns = document.getElementById('stSteps'); ns.innerHTML='';
+  steps.forEach(function(s,i){
+    var d = document.createElement('div'); d.className='nstep';
+    d.innerHTML='<span class="nsnum">'+(i+1)+'</span><div><div class="nst">'+s.t+'</div><div class="nsd">'+s.d+'</div></div>';
+    ns.appendChild(d);
+  });
+
+  // CTAs
+  document.getElementById('stCTA').innerHTML =
+    '<a href="https://treecarepro.sweettreeshawaii.com/#contact" class="btn-main">📞 Schedule My Free Assessment</a>'
+    +(prune ? '<a href="https://treecarepro.sweettreeshawaii.com/#contact" class="btn-alt">✂️ Book a Pruning Service</a>' : '');
+
+  // Store score data for GHL
+  sd = {
+    tree_type:      tree,
+    score:          score,
+    level:          lvl.toUpperCase(),
+    pruning_needed: prune ? 'YES' : 'NO',
+    has_critical:   hasCrit ? 'YES' : 'NO',
+    fruit_score:    ans.fruit  !== undefined ? ans.fruit  : 'skipped',
+    pest_score:     ans.pest   !== undefined ? ans.pest   : 'skipped',
+    leaf_score:     ans.leaf   !== undefined ? ans.leaf   : 'skipped',
+    canopy_score:   ans.canopy !== undefined ? ans.canopy : 'skipped',
+    trunk_score:    ans.trunk  !== undefined ? ans.trunk  : 'skipped'
+  };
+}
+
+/* ── GHL REVEAL ── */
+function revealGHL(){
+  // Load iframe lazily (avoids loading it before user opts in)
+  var iframe = document.getElementById('ghlIframe');
+  if(iframe.getAttribute('src')==='about:blank'){
+    iframe.setAttribute('src', iframe.getAttribute('data-src'));
+  }
+
+  // Show the form area
+  var area = document.getElementById('ghlArea');
+  area.classList.add('visible');
+
+  // Hide the unlock button, show confirmation
+  var box = document.getElementById('stUnlockBox');
+  box.innerHTML = '<div style="padding:12px 0;font-size:.9rem;color:#6aab87;font-weight:600;">✅ Form loaded below — fill it in to get your report!</div>';
+
+  // Scroll to form
+  setTimeout(function(){
+    area.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 200);
+
+  // Send to GHL webhook (optional — set your URL below)
+  var GHL_WEBHOOK = ''; // <-- paste your GHL Inbound Webhook URL here
+  if(GHL_WEBHOOK){
+    fetch(GHL_WEBHOOK, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(sd)
+    }).catch(function(){});
+  }
+}
+
+/* ── RETAKE ── */
+function retake(){
+  ans={}; sd={};
+  document.querySelectorAll('input[type="radio"]').forEach(function(r){ r.checked=false; });
+  ['tree','q1','q2','q3','q4','q5'].forEach(function(q){
+    var b = document.getElementById('bN-'+q); if(b) b.classList.remove('on');
+  });
+  ['sp1','sp2','sp3','sp4','sp5'].forEach(function(id,i){
+    var el = document.getElementById(id);
+    el.classList.remove('on','dn');
+    if(i===0) el.classList.add('on');
+  });
+  document.getElementById('stArc').style.strokeDashoffset = '207.3';
+
+  // Reset GHL area
+  var area   = document.getElementById('ghlArea');
+  var iframe = document.getElementById('ghlIframe');
+  area.classList.remove('visible');
+  iframe.setAttribute('src','about:blank');
+
+  // Restore unlock box
+  document.getElementById('stUnlockBox').innerHTML =
+    '<div class="unlock-ttl">Get your full report + video from Sage</div>'
+    +'<div class="unlock-sub">Enter your info below and we\'ll send a personalized care plan — free. Local team, no spam.</div>'
+    +'<button class="btn-unlock" id="btnUnlock">📋 Get My Free Report</button>'
+    +'<div class="unlock-note">No spam. Local team. Mililani, HI.</div>';
+  document.getElementById('btnUnlock').addEventListener('click', function(){ revealGHL(); });
+
+  goto('welcome');
+}
+
+})();
+</script>
+</body>
+</html>
