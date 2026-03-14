@@ -593,7 +593,11 @@ function buildRes(){
   var score   = Math.round((total/(CATS.length*10))*100);
   var hasCrit = CATS.some(function(k){ return ans[k]===0; });
   var serCt   = CATS.filter(function(k){ return ans[k]===3; }).length;
-  var prune   = (ans.canopy||10) <= 6;
+  var prune   = (ans.canopy||10) <= 6
+           || (ans.fruit||10)  <= 6
+           || (ans.pest||10)   <= 3
+           || hasCrit
+           || serCt >= 1;
 
   var lvl = (score<=35||hasCrit) ? 'danger' : (score<=65||serCt>=2) ? 'warning' : 'good';
   var cols = {danger:'#c0392b', warning:'#d97706', good:'#2a7a4b'};
@@ -646,8 +650,8 @@ function buildRes(){
 
   // CTAs
   document.getElementById('stCTA').innerHTML =
-    '<a href="https://treecarepro.sweettreeshawaii.com/#contact" class="btn-main">📞 Schedule My Free Assessment</a>'
-    +(prune ? '<a href="https://treecarepro.sweettreeshawaii.com/#contact" class="btn-alt">✂️ Book a Pruning Service</a>' : '');
+    '<a href="https://tidycal.com/sweettreeshawaii/treecarepro" target="_blank" rel="noopener" class="btn-main">📞 Schedule My Free Consultation</a>'
+    +(prune ? '<a href="https://tidycal.com/sweettreeshawaii/treecarepro-estate" target="_blank" rel="noopener" class="btn-alt">✂️ Schedule a Pruning Assessment</a>' : '');
 
   // Store score data for GHL
   sd = {
@@ -701,21 +705,30 @@ function submitLead(){
     +' | Trunk: '+(sd.trunk_score||'');
 
   // Submit to GHL form
-  var formData = new FormData();
-  formData.append('formId',           'etwO9iN0rTVDCCgIsXN8');
-  formData.append('location_id',      'nOHbnaOkiRTxZP4O7t1d');
-  formData.append('full_name',        name);
-  formData.append('email',            email);
-  formData.append('tree_health_score', sd.level||'');
-  formData.append('raw_points',       String(sd.score||0));
-  formData.append('severity',         sd.level||'');
-  formData.append('pruning_needed',   sd.pruning_needed||'');
-  formData.append('has_zero_score',   sd.has_critical==='YES' ? 'YES' : 'NO');
-  formData.append('issues_summary',   issuesSummary);
+  // Split name into first/last for GHL
+  var nameParts = name.split(' ');
+  var firstName = nameParts[0];
+  var lastName  = nameParts.slice(1).join(' ') || '';
+
+  var payload = {
+    formId:      'etwO9iN0rTVDCCgIsXN8',
+    location_id: 'nOHbnaOkiRTxZP4O7t1d',
+    full_name:    name,
+    first_name:   firstName,
+    last_name:    lastName,
+    email:        email,
+    tree_health_score: sd.level||'',
+    raw_points:        String(sd.score||0),
+    severity:          sd.level||'',
+    pruning_needed:    sd.pruning_needed||'',
+    has_zero_score:    sd.has_critical==='YES' ? 'YES' : 'NO',
+    issues_summary:    issuesSummary
+  };
 
   fetch('https://api.upsurgepros.com/forms/submit', {
     method: 'POST',
-    body: formData
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
   })
   .then(function(r){
     // Show success regardless of response — GHL sometimes returns 200 with varied content
