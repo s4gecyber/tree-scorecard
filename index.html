@@ -431,12 +431,11 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
       </div>
     </div>
 
-    <!-- GHL FORM EMBED — shown after quiz, pre-filled via postMessage -->
+    <!-- GHL FORM EMBED — shown after quiz, pre-filled via URL params -->
   <div id="ghlArea" style="display:none;margin-top:16px;">
     <iframe
       id="ghlIframe"
-      src="about:blank"
-      data-src="https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8"
+      src="https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8"
       style="width:100%;min-height:320px;border:none;border-radius:12px;display:block;"
       title="Request Tree Care"
     ></iframe>
@@ -654,13 +653,13 @@ function buildRes(){
 }
 
 /* ── GHL PRE-FILL ── */
-/* Called after buildRes() — bakes hidden field values into the iframe src URL as
-   query parameters so GHL pre-populates them on its own domain (bypasses CORS). */
+/* Bakes hidden field values into the iframe src URL as query parameters using
+   GHL field keys so GHL pre-populates them on its own domain (bypasses CORS). */
 function loadGHL(){
   var area   = document.getElementById('ghlArea');
   var iframe = document.getElementById('ghlIframe');
+  var base   = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
 
-  // Build issues summary string
   var issuesSummary = 'Tree: '+(sd.tree_type||'unknown')
     +' | Score: '+(sd.score||0)+'/100'
     +' | Level: '+(sd.level||'')
@@ -671,21 +670,17 @@ function loadGHL(){
     +' | Canopy: '+(sd.canopy_score||'')
     +' | Trunk: '+(sd.trunk_score||'');
 
-  // Encode all hidden fields into the URL — GHL reads these as pre-fill values
-  var base   = iframe.getAttribute('data-src');
   var params = new URLSearchParams({
-    'XgGwUVrKzCEr41TS7c8V': sd.level || '',                          // Tree Health Score level
-    '6qVAyfDuPImbyVRYLmlC': String(sd.score || 0),                   // Raw score 0-100
-    'NNathQuc9doqkhSKViTR': sd.level || '',                          // Severity label
-    'xTU3Njiea7F28mffvCiX': sd.pruning_needed || '',                 // Pruning Needed YES/NO
-    'cCl0TUp3tHC4LQGqXaXe': sd.has_critical === 'YES' ? 'YES' : 'NO', // Has Critical YES/NO
-    'GduKDCAwhjCiATaWKUwF': issuesSummary                            // Issues Summary
+    'tree_health_score': sd.level || '',
+    'raw_points':        String(sd.score || 0),
+    'severity':          sd.level || '',
+    'pruning_needed':    sd.pruning_needed || 'NO',
+    'has_zero_score':    sd.has_critical === 'YES' ? 'YES' : 'NO',
+    'issues_summary':    issuesSummary
   });
-  iframe.src = base + '?' + params.toString();
 
-  iframe.onload = function(){
-    area.style.display = 'block';
-  };
+  iframe.src = base + '?' + params.toString();
+  area.style.display = 'block';
 }
 
 /* ── RETAKE ── */
@@ -704,7 +699,7 @@ function retake(){
 
   // Reset GHL iframe
   var iframe = document.getElementById('ghlIframe');
-  iframe.src = 'about:blank';
+  iframe.src = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
   document.getElementById('ghlArea').style.display = 'none';
 
   goto('welcome');
