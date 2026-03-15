@@ -634,6 +634,33 @@ function buildRes(){
     '<a href="https://tidycal.com/sweettreeshawaii/treecarepro" target="_blank" rel="noopener" class="btn-main">📞 Schedule My Free Consultation</a>'
     +(prune ? '<a href="https://tidycal.com/sweettreeshawaii/treecarepro-estate" target="_blank" rel="noopener" class="btn-alt">✂️ Schedule a Pruning Assessment</a>' : '');
 
+  // Build rich email summary
+  var summaryParts = [];
+  summaryParts.push('TREE: ' + tree.toUpperCase());
+  summaryParts.push('HEALTH SCORE: ' + score + '/100 — ' + v.l);
+  summaryParts.push('');
+  summaryParts.push('--- WHAT WE FOUND ---');
+  CATS.forEach(function(k){
+    var val = ans[k];
+    if(typeof val === 'number' && val < 10){
+      var f = FD[k][val];
+      summaryParts.push(f.i + ' ' + f.n);
+      summaryParts.push(f.d);
+      summaryParts.push('');
+    }
+  });
+  if(CATS.every(function(k){ return ans[k] === 10; })){
+    summaryParts.push('All areas looking healthy — no issues detected.');
+    summaryParts.push('');
+  }
+  summaryParts.push('--- YOUR NEXT STEPS ---');
+  steps.forEach(function(s, i){
+    summaryParts.push((i+1) + '. ' + s.t);
+    summaryParts.push(s.d);
+    summaryParts.push('');
+  });
+  var richSummary = summaryParts.join('\n');
+
   // Store score data for GHL
   sd = {
     tree_type:      tree,
@@ -645,7 +672,8 @@ function buildRes(){
     pest_score:     ans.pest   !== undefined ? ans.pest   : 'skipped',
     leaf_score:     ans.leaf   !== undefined ? ans.leaf   : 'skipped',
     canopy_score:   ans.canopy !== undefined ? ans.canopy : 'skipped',
-    trunk_score:    ans.trunk  !== undefined ? ans.trunk  : 'skipped'
+    trunk_score:    ans.trunk  !== undefined ? ans.trunk  : 'skipped',
+    issues_summary: richSummary
   };
 
   // Load and pre-fill GHL embed form
@@ -660,23 +688,13 @@ function loadGHL(){
   var iframe = document.getElementById('ghlIframe');
   var base   = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
 
-  var issuesSummary = 'Tree: '+(sd.tree_type||'unknown')
-    +' | Score: '+(sd.score||0)+'/100'
-    +' | Level: '+(sd.level||'')
-    +' | Pruning: '+(sd.pruning_needed||'')
-    +' | Fruit: '+(sd.fruit_score||'')
-    +' | Pest: '+(sd.pest_score||'')
-    +' | Leaf: '+(sd.leaf_score||'')
-    +' | Canopy: '+(sd.canopy_score||'')
-    +' | Trunk: '+(sd.trunk_score||'');
-
   var params = new URLSearchParams({
     'tree_health_score': sd.level || '',
     'raw_points':        String(sd.score || 0),
     'severity':          sd.level || '',
     'pruning_needed':    sd.pruning_needed || 'NO',
     'has_zero_score':    sd.has_critical === 'YES' ? 'YES' : 'NO',
-    'issues_summary':    issuesSummary
+    'issues_summary':    sd.issues_summary || ''
   });
 
   iframe.src = base + '?' + params.toString();
