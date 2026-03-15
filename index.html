@@ -188,18 +188,7 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
 .btn-alt:hover{background:rgba(255,255,255,.11)}
 
 /* ── REPORT UNLOCK + GHL SECTION ── */
-.lead-input{width:100%;padding:13px 16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:.95rem;font-family:inherit;box-sizing:border-box;margin-bottom:10px;transition:border .2s}
-.lead-input::placeholder{color:rgba(255,255,255,.35)}
-.lead-input:focus{outline:none;border-color:var(--m);background:rgba(255,255,255,.1)}
-.lead-input.err{border-color:#e07070}
-.btn-submit{width:100%;padding:15px;background:var(--m);border:none;border-radius:10px;color:#1a2e23;font-weight:700;font-size:1rem;font-family:inherit;cursor:pointer;transition:background .2s;margin-top:4px}
-.btn-submit:hover{background:var(--l)}
-.btn-submit:disabled{opacity:.6;cursor:not-allowed}
-.submit-note{font-size:.72rem;color:rgba(255,255,255,.28);margin-top:8px;text-align:center}
-.submit-success{padding:20px;text-align:center;color:var(--m)}
-.submit-success .s-icon{font-size:2rem;margin-bottom:8px}
-.submit-success .s-title{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:300;margin-bottom:6px}
-.submit-success .s-sub{font-size:.82rem;color:rgba(255,255,255,.5)}
+
 .unlock{background:rgba(106,171,135,.09);border:1px solid rgba(106,171,135,.22);
   border-radius:16px;padding:22px 18px;margin-top:20px;text-align:center}
 .unlock-ttl{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:300;
@@ -430,24 +419,7 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
         <div class="cta" id="stCTA"></div>
 
         <!-- REPORT UNLOCK -->
-        <!-- LEAD CAPTURE — inline name+email form -->
-        <div class="unlock" id="stUnlockBox">
-          <div class="unlock-ttl">Get your free personalized care plan</div>
-          <div class="unlock-sub">We'll email your full tree health report + next steps. Local team, no spam.</div>
-          <div id="leadForm">
-            <input class="lead-input" id="leadName"  type="text"  placeholder="Your first name" autocomplete="given-name" />
-            <input class="lead-input" id="leadEmail" type="email" placeholder="Your email address" autocomplete="email" />
-            <button class="btn-submit" id="btnSubmit">📋 Send My Free Report →</button>
-            <div class="submit-note">No spam. Local team. Mililani, HI.</div>
-          </div>
-          <div id="leadSuccess" style="display:none">
-            <div class="submit-success">
-              <div class="s-icon">✅</div>
-              <div class="s-title">You're all set, <span id="leadFirstName"></span>!</div>
-              <div class="s-sub">Check your inbox — your personalized care plan is on its way.</div>
-            </div>
-          </div>
-        </div>
+
 
         <button class="btn-retake" id="btnRetake">↩ Start over</button>
         <div class="footer">
@@ -459,7 +431,18 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
       </div>
     </div>
 
-  </div><!-- /stage -->
+    <!-- GHL FORM EMBED — shown after quiz, pre-filled via postMessage -->
+  <div id="ghlArea" style="display:none;margin-top:16px;">
+    <iframe
+      id="ghlIframe"
+      src="about:blank"
+      data-src="https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8"
+      style="width:100%;min-height:320px;border:none;border-radius:12px;display:block;"
+      title="Request Tree Care"
+    ></iframe>
+  </div>
+
+</div><!-- /stage -->
 </div><!-- /card -->
 
 <script>
@@ -555,8 +538,7 @@ document.getElementById('bB-q4').addEventListener('click',    function(){ goto('
 document.getElementById('bN-q4').addEventListener('click',    function(){ goto('q5'); });
 document.getElementById('bB-q5').addEventListener('click',    function(){ goto('q4'); });
 document.getElementById('bN-q5').addEventListener('click',    function(){ startProc(); });
-document.getElementById('btnSubmit').addEventListener('click', function(){ submitLead(); });
-document.getElementById('leadEmail').addEventListener('keydown', function(e){ if(e.key==='Enter') submitLead(); });
+
 document.getElementById('btnRetake').addEventListener('click', function(){ retake(); });
 
 /* ── RADIO LISTENERS ── */
@@ -666,34 +648,19 @@ function buildRes(){
     canopy_score:   ans.canopy !== undefined ? ans.canopy : 'skipped',
     trunk_score:    ans.trunk  !== undefined ? ans.trunk  : 'skipped'
   };
+
+  // Load and pre-fill GHL embed form
+  loadGHL();
 }
 
-/* ── GHL FORM SUBMIT ── */
-function submitLead(){
-  var name  = document.getElementById('leadName').value.trim();
-  var email = document.getElementById('leadEmail').value.trim();
+/* ── GHL PRE-FILL ── */
+/* Called after buildRes() — bakes hidden field values into the iframe src URL as
+   query parameters so GHL pre-populates them on its own domain (bypasses CORS). */
+function loadGHL(){
+  var area   = document.getElementById('ghlArea');
+  var iframe = document.getElementById('ghlIframe');
 
-  // Validate
-  var nameEl  = document.getElementById('leadName');
-  var emailEl = document.getElementById('leadEmail');
-  nameEl.classList.remove('err');
-  emailEl.classList.remove('err');
-
-  var valid = true;
-  if(!name){ nameEl.classList.add('err'); nameEl.focus(); valid=false; }
-  if(!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-    emailEl.classList.add('err');
-    if(valid) emailEl.focus();
-    valid=false;
-  }
-  if(!valid) return;
-
-  // Disable button while submitting
-  var btn = document.getElementById('btnSubmit');
-  btn.disabled = true;
-  btn.textContent = 'Sending…';
-
-  // Build issues summary from score data
+  // Build issues summary string
   var issuesSummary = 'Tree: '+(sd.tree_type||'unknown')
     +' | Score: '+(sd.score||0)+'/100'
     +' | Level: '+(sd.level||'')
@@ -704,47 +671,21 @@ function submitLead(){
     +' | Canopy: '+(sd.canopy_score||'')
     +' | Trunk: '+(sd.trunk_score||'');
 
-  // Submit to GHL form
-  // Split name into first/last for GHL
-  var nameParts = name.split(' ');
-  var firstName = nameParts[0];
-  var lastName  = nameParts.slice(1).join(' ') || '';
-
-  var payload = {
-    formId:      'etwO9iN0rTVDCCgIsXN8',
-    location_id: 'nOHbnaOkiRTxZP4O7t1d',
-    full_name:    name,
-    first_name:   firstName,
-    last_name:    lastName,
-    email:        email,
-    tree_health_score: sd.level||'',
-    raw_points:        String(sd.score||0),
-    severity:          sd.level||'',
-    pruning_needed:    sd.pruning_needed||'',
-    has_zero_score:    sd.has_critical==='YES' ? 'YES' : 'NO',
-    issues_summary:    issuesSummary
-  };
-
-  fetch('https://api.upsurgepros.com/forms/submit', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(payload)
-  })
-  .then(function(r){
-    // Show success regardless of response — GHL sometimes returns 200 with varied content
-    showLeadSuccess(name);
-  })
-  .catch(function(){
-    // Even on network error, show success (GHL may have received it)
-    showLeadSuccess(name);
+  // Encode all hidden fields into the URL — GHL reads these as pre-fill values
+  var base   = iframe.getAttribute('data-src');
+  var params = new URLSearchParams({
+    'XgGwUVrKzCEr41TS7c8V': sd.level || '',                          // Tree Health Score level
+    '6qVAyfDuPImbyVRYLmlC': String(sd.score || 0),                   // Raw score 0-100
+    'NNathQuc9doqkhSKViTR': sd.level || '',                          // Severity label
+    'xTU3Njiea7F28mffvCiX': sd.pruning_needed || '',                 // Pruning Needed YES/NO
+    'cCl0TUp3tHC4LQGqXaXe': sd.has_critical === 'YES' ? 'YES' : 'NO', // Has Critical YES/NO
+    'GduKDCAwhjCiATaWKUwF': issuesSummary                            // Issues Summary
   });
-}
+  iframe.src = base + '?' + params.toString();
 
-function showLeadSuccess(name){
-  var firstName = name.split(' ')[0];
-  document.getElementById('leadFirstName').textContent = firstName;
-  document.getElementById('leadForm').style.display = 'none';
-  document.getElementById('leadSuccess').style.display = 'block';
+  iframe.onload = function(){
+    area.style.display = 'block';
+  };
 }
 
 /* ── RETAKE ── */
@@ -761,16 +702,10 @@ function retake(){
   });
   document.getElementById('stArc').style.strokeDashoffset = '207.3';
 
-  // Reset lead form
-  document.getElementById('leadName').value  = '';
-  document.getElementById('leadEmail').value = '';
-  document.getElementById('leadName').classList.remove('err');
-  document.getElementById('leadEmail').classList.remove('err');
-  document.getElementById('leadForm').style.display    = 'block';
-  document.getElementById('leadSuccess').style.display = 'none';
-  var btn = document.getElementById('btnSubmit');
-  btn.disabled = false;
-  btn.textContent = '📋 Send My Free Report →';
+  // Reset GHL iframe
+  var iframe = document.getElementById('ghlIframe');
+  iframe.src = 'about:blank';
+  document.getElementById('ghlArea').style.display = 'none';
 
   goto('welcome');
 }
