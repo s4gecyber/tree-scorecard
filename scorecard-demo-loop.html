@@ -522,6 +522,16 @@ body {
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(6px); }
 }
+/* QR card as clickable CTA */
+.bd-qr-link {
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.bd-qr-link:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 48px rgba(28,61,46,0.2), 0 6px 14px rgba(28,61,46,0.10);
+}
 
 /* ===== FOOTER ===== */
 .bd-footer {
@@ -856,19 +866,18 @@ body {
         <div class="bd-reviews-cta">Verified</div>
       </div>
 
-      <!-- QR card -->
-      <div class="bd-qr-card">
+      <!-- QR card — entire block is clickable -->
+      <a href="https://s4gecyber.github.io/tree-scorecard/" target="_blank" rel="noopener" class="bd-qr-card bd-qr-link">
         <div class="bd-qr-img">
-          <!-- Placeholder: replace src with your real qr image path. Currently embedded base64. -->
-          <img id="qrImage" alt="Scan to take the scorecard" />
+          <img id="qrImage" alt="Scan or click to try the scorecard" />
         </div>
         <div class="bd-qr-text">
-          <div class="bd-qr-label">Scan to Try</div>
+          <div class="bd-qr-label">Scan or click to try</div>
           <div class="bd-qr-headline">Check<br>Your Tree</div>
           <div class="bd-qr-sub">2 minutes · Free · No commitment</div>
           <div class="bd-qr-arrow">→</div>
         </div>
-      </div>
+      </a>
     </div>
 
   </div>
@@ -886,11 +895,7 @@ body {
         <strong>Persona 1 of 4</strong> <em>The healthy mango</em>
       </div>
     </div>
-    <div class="bd-trust">
-      <span>🪓 Certified Arborist</span>
-      <span>🌺 Oahu Since 2020</span>
-      <span>📞 (808) 301-1808</span>
-    </div>
+    <div class="bd-trust"></div>
   </div>
 
 </div>
