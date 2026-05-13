@@ -432,9 +432,10 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
     <!-- GHL FORM EMBED — shown after quiz, pre-filled via URL params -->
   <div id="ghlArea" style="display:none;margin-top:16px;">
     <iframe
-      id="ghlIframe"
+      id="msgsndr-etwO9iN0rTVDCCgIsXN8"
       src="https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8"
-      style="width:100%;min-height:320px;border:none;border-radius:12px;display:block;"
+      scrolling="no"
+      style="width:100%;height:320px;border:none;border-radius:12px;display:block;overflow:hidden;"
       title="Request Tree Care"
     ></iframe>
   </div>
@@ -681,7 +682,7 @@ function buildRes(){
 /* ── GHL PRE-FILL ── */
 function loadGHL(){
   var area   = document.getElementById('ghlArea');
-  var iframe = document.getElementById('ghlIframe');
+  var iframe = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
   var base   = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
 
   var params = new URLSearchParams({
@@ -712,7 +713,7 @@ function retake(){
   document.getElementById('stArc').style.strokeDashoffset = '207.3';
 
   // Reset GHL iframe
-  var iframe = document.getElementById('ghlIframe');
+  var iframe = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
   iframe.src = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
   document.getElementById('ghlArea').style.display = 'none';
 
@@ -726,7 +727,10 @@ function retake(){
   AUTO-RESIZE BRIDGE — reports content height to parent iframe.
   The parent page listens for 'sth-resize' messages and sets
   the iframe height accordingly — no internal scrollbar needed.
+  form_embed.js handles GHL iframe auto-height; our fallback
+  catches any resize messages form_embed.js might miss.
 ============================================================ -->
+<script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
 <script>
 (function(){
   function sendHeight(){
@@ -736,6 +740,18 @@ function retake(){
   window.addEventListener('load', sendHeight);
   new MutationObserver(sendHeight).observe(document.body,
     {childList:true, subtree:true, attributes:true, attributeFilter:['style','class']});
+
+  /* Fallback: catch GHL form resize messages directly in case
+     form_embed.js doesn't handle this particular embed format */
+  window.addEventListener('message', function(e){
+    if(!e.data || e.source === window.parent) return;
+    var ghl = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
+    if(!ghl || e.source !== ghl.contentWindow) return;
+    var h = null;
+    if(typeof e.data === 'number') h = e.data;
+    else if(typeof e.data === 'object' && e.data.height && typeof e.data.height === 'number') h = e.data.height;
+    if(h && h > 100){ ghl.style.height = h + 'px'; sendHeight(); }
+  });
 })();
 </script>
 
