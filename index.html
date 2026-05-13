@@ -188,7 +188,6 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
 .btn-alt:hover{background:rgba(255,255,255,.11)}
 
 /* ── REPORT UNLOCK + GHL SECTION ── */
-
 .unlock{background:rgba(106,171,135,.09);border:1px solid rgba(106,171,135,.22);
   border-radius:16px;padding:22px 18px;margin-top:20px;text-align:center}
 .unlock-ttl{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:300;
@@ -419,7 +418,6 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
         <div class="cta" id="stCTA"></div>
 
         <!-- REPORT UNLOCK -->
-
 
         <button class="btn-retake" id="btnRetake">↩ Start over</button>
         <div class="footer">
@@ -681,8 +679,6 @@ function buildRes(){
 }
 
 /* ── GHL PRE-FILL ── */
-/* Bakes hidden field values into the iframe src URL as query parameters using
-   GHL field keys so GHL pre-populates them on its own domain (bypasses CORS). */
 function loadGHL(){
   var area   = document.getElementById('ghlArea');
   var iframe = document.getElementById('ghlIframe');
@@ -725,5 +721,23 @@ function retake(){
 
 })();
 </script>
+
+<!-- ============================================================
+  AUTO-RESIZE BRIDGE — reports content height to parent iframe.
+  The parent page listens for 'sth-resize' messages and sets
+  the iframe height accordingly — no internal scrollbar needed.
+============================================================ -->
+<script>
+(function(){
+  function sendHeight(){
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    window.parent.postMessage({type:'sth-resize', height:h}, '*');
+  }
+  window.addEventListener('load', sendHeight);
+  new MutationObserver(sendHeight).observe(document.body,
+    {childList:true, subtree:true, attributes:true, attributeFilter:['style','class']});
+})();
+</script>
+
 </body>
 </html>
