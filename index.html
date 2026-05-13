@@ -435,7 +435,7 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
       id="msgsndr-etwO9iN0rTVDCCgIsXN8"
       src="https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8"
       scrolling="no"
-      style="width:100%;height:320px;border:none;border-radius:12px;display:block;overflow:hidden;"
+      style="width:100%;height:600px;border:none;border-radius:12px;display:block;overflow:hidden;"
       title="Request Tree Care"
     ></iframe>
   </div>
@@ -696,6 +696,18 @@ function loadGHL(){
 
   iframe.src = base + '?' + params.toString();
   area.style.display = 'block';
+
+  /* Safety-net: if postMessage resize hasn't fired after 2s,
+     expand to a generous fixed height to guarantee no scrollbar */
+  setTimeout(function(){
+    var ghl = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
+    if(ghl && parseInt(ghl.style.height) < 600){
+      ghl.style.height = '650px';
+    }
+    /* Always re-send total height after GHL area is shown */
+    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    window.parent.postMessage({type:'sth-resize', height:h}, '*');
+  }, 2000);
 }
 
 /* ── RETAKE ── */
@@ -741,16 +753,29 @@ function retake(){
   new MutationObserver(sendHeight).observe(document.body,
     {childList:true, subtree:true, attributes:true, attributeFilter:['style','class']});
 
-  /* Fallback: catch GHL form resize messages directly in case
-     form_embed.js doesn't handle this particular embed format */
+  /* GHL form resize — listens for height messages from the embedded
+     GHL form and resizes the iframe. GHL sends height in several
+     formats depending on version; handles all of them. */
   window.addEventListener('message', function(e){
-    if(!e.data || e.source === window.parent) return;
+    if(!e.data) return;
     var ghl = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
-    if(!ghl || e.source !== ghl.contentWindow) return;
+    if(!ghl) return;
+    /* Parse data — GHL sometimes sends JSON strings, sometimes objects */
+    var d = e.data;
+    if(typeof d === 'string'){
+      try { d = JSON.parse(d); } catch(err){ return; }
+    }
+    if(typeof d !== 'object' && typeof d !== 'number') return;
+    /* Ignore our own outgoing sth-resize messages */
+    if(d && d.type === 'sth-resize') return;
+    /* Extract height from every format GHL is known to use */
     var h = null;
-    if(typeof e.data === 'number') h = e.data;
-    else if(typeof e.data === 'object' && e.data.height && typeof e.data.height === 'number') h = e.data.height;
-    if(h && h > 100){ ghl.style.height = h + 'px'; sendHeight(); }
+    if(typeof d === 'number' && d > 50) h = d;
+    else if(typeof d === 'object'){
+      h = d.height || d.frameHeight || d.scrollHeight || d.contentHeight || null;
+      if(typeof h !== 'number' || h < 50) h = null;
+    }
+    if(h){ ghl.style.height = h + 'px'; sendHeight(); }
   });
 })();
 </script>
