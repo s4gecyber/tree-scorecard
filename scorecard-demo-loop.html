@@ -219,15 +219,16 @@ body {
   gap: 14px;
 }
 .bd-logo {
-  width: 48px; height: 48px;
-  background: #1c3d2e;
-  border-radius: 12px;
-  display: grid; place-items: center;
-  font-family: 'Fraunces', serif;
-  font-weight: 600;
-  color: #f4a040;
-  font-size: 22px;
-  box-shadow: 0 6px 16px rgba(28, 61, 46, 0.22);
+  width: 64px; height: 64px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bd-logo img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
 }
 .bd-brand-text {
   display: flex;
@@ -249,34 +250,11 @@ body {
   font-weight: 600;
   margin-top: 3px;
 }
-.bd-live {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 18px;
-  background: #1c3d2e;
-  color: #d4ead9;
-  border-radius: 100px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-}
-.bd-livedot {
-  width: 8px; height: 8px;
-  background: #f4a040;
-  border-radius: 50%;
-  animation: livePulse 1.4s ease-in-out infinite;
-}
-@keyframes livePulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(244, 160, 64, 0.6); }
-  50% { opacity: 0.6; box-shadow: 0 0 0 10px rgba(244, 160, 64, 0); }
-}
 
 /* ===== MAIN CONTENT GRID ===== */
 .bd-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 420px;
   align-items: center;
   padding: 0 40px;
   gap: 32px;
@@ -302,7 +280,8 @@ body {
     0 30px 70px rgba(28, 61, 46, 0.22),
     0 8px 20px rgba(28, 61, 46, 0.12),
     inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  width: 660px;
+  width: 100%;
+  max-width: 660px;
   height: 100%;
   max-height: 100%;
   display: flex;
@@ -519,8 +498,8 @@ body {
   animation: arrowSlide 2s ease-in-out infinite;
 }
 @keyframes arrowSlide {
-  0%, 100% { transform: translateX(0); }
-  50% { transform: translateX(6px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
 }
 /* QR card as clickable CTA */
 .bd-qr-link {
@@ -591,18 +570,67 @@ body {
   max-width: 560px;
 }
 
-/* Layout adjustments for narrower viewports */
-@media (max-width: 1280px) {
-  .bd-tablet { width: 580px; }
-  .bd-headline { font-size: 36px; }
-  .bd-qr-img { width: 140px; height: 140px; }
-  .bd-qr-headline { font-size: 22px; }
+/* ===== RESPONSIVE ===== */
+
+/* Laptop 1400px */
+@media (max-width: 1400px) {
+  .bd-content { grid-template-columns: 1fr 400px; gap: 24px; padding: 0 32px; }
+  .bd-headline { font-size: 38px; }
 }
+
+/* Laptop 1280px */
+@media (max-width: 1280px) {
+  .bd-content { grid-template-columns: 1fr 380px; gap: 18px; padding: 0 26px; }
+  .bd-headline { font-size: 32px; }
+  .bd-qr-img { width: 130px; height: 130px; }
+  .bd-qr-headline { font-size: 22px; }
+  .bd-body { font-size: 14px; }
+}
+
+/* Small laptop / large tablet 1100px */
 @media (max-width: 1100px) {
-  .bd-content { grid-template-columns: 1fr 0.85fr; gap: 18px; padding: 0 24px; }
-  .bd-tablet { width: 520px; }
-  .bd-header { padding: 14px 24px; }
-  .bd-footer { padding: 12px 24px 16px; }
+  .bd-content { grid-template-columns: 1fr 340px; gap: 14px; padding: 0 18px; }
+  .bd-header { padding: 12px 18px; }
+  .bd-footer { padding: 10px 18px 14px; }
+  .bd-headline { font-size: 27px; }
+  .bd-qr-img { width: 100px; height: 100px; }
+  .bd-qr-headline { font-size: 19px; }
+  .bd-qr-card { padding: 16px 18px; gap: 14px; }
+  .bd-body { font-size: 13px; }
+  .bd-reviews { padding: 10px 14px; }
+}
+
+/* Tablet / portrait — stack layout */
+@media (max-width: 880px) {
+  body { overflow-y: auto; overflow-x: hidden; }
+  .bd-stage { height: auto; min-height: 100dvh; }
+  .bd-content {
+    grid-template-columns: 1fr;
+    height: auto;
+    padding: 16px 20px 24px;
+    gap: 20px;
+  }
+  .bd-side { order: -1; max-width: 100%; height: auto; padding: 4px 0 0; }
+  .bd-tablet-area {
+    height: 72svh;
+    min-height: 360px;
+    max-height: 580px;
+    justify-content: center;
+  }
+  .bd-qr-card { max-width: 100%; }
+  .bd-reviews { max-width: 100%; }
+  .bd-headline { font-size: 30px; }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .bd-header { padding: 10px 14px; }
+  .bd-footer { padding: 8px 14px 10px; }
+  .bd-brand-name { font-size: 16px; }
+  .bd-brand-sub { font-size: 9px; letter-spacing: 0.14em; }
+  .bd-headline { font-size: 26px; }
+  .bd-body { font-size: 13px; }
+  .bd-content { padding: 12px 14px 20px; }
 }
 </style>
 </head>
@@ -614,15 +642,11 @@ body {
   <!-- =========== HEADER =========== -->
   <div class="bd-header">
     <div class="bd-brand">
-      <div class="bd-logo">🌳</div>
+      <div class="bd-logo"><img src="./sth-logo.png" alt="Sweet Trees Hawaii" /></div>
       <div class="bd-brand-text">
         <div class="bd-brand-name">Sweet Trees Hawaii</div>
         <div class="bd-brand-sub">Tropical Fruit Tree Specialists · Oahu</div>
       </div>
-    </div>
-    <div class="bd-live">
-      <span class="bd-livedot"></span>
-      Live Demo
     </div>
   </div>
 
@@ -866,8 +890,8 @@ body {
         <div class="bd-reviews-cta">Verified</div>
       </div>
 
-      <!-- QR card — entire block is clickable -->
-      <a href="https://s4gecyber.github.io/tree-scorecard/" target="_blank" rel="noopener" class="bd-qr-card bd-qr-link">
+      <!-- QR card — clicks scroll to live scorecard below on the landing page -->
+      <div class="bd-qr-card bd-qr-link" id="qrScrollBtn" role="button" tabindex="0" aria-label="Scroll down to try the live scorecard">
         <div class="bd-qr-img">
           <img id="qrImage" alt="Scan or click to try the scorecard" />
         </div>
@@ -875,9 +899,9 @@ body {
           <div class="bd-qr-label">Scan or click to try</div>
           <div class="bd-qr-headline">Check<br>Your Tree</div>
           <div class="bd-qr-sub">2 minutes · Free · No commitment</div>
-          <div class="bd-qr-arrow">→</div>
+          <div class="bd-qr-arrow">↓</div>
         </div>
-      </a>
+      </div>
     </div>
 
   </div>
@@ -1106,6 +1130,20 @@ window._scorecardAPI = {
 ========================================================= -->
 <script>
 (function(){
+  /* ----- QR scroll — sends message to parent page to scroll to live scorecard ----- */
+  var qrBtn = document.getElementById('qrScrollBtn');
+  if(qrBtn) {
+    qrBtn.addEventListener('click', function(){
+      window.parent.postMessage({ type: 'scroll-to-scorecard' }, '*');
+    });
+    qrBtn.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        window.parent.postMessage({ type: 'scroll-to-scorecard' }, '*');
+      }
+    });
+  }
+
   /* ----- QR (embedded base64 - drop in your transparent QR or replace) ----- */
   // Inline base64 of the transparent QR converted from the PSD provided.
   // Replace `QR_DATA` with your own base64 if needed.
