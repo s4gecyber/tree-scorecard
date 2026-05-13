@@ -254,7 +254,7 @@ body {
 /* ===== MAIN CONTENT GRID ===== */
 .bd-content {
   display: grid;
-  grid-template-columns: 1fr 420px;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
   padding: 0 40px;
   gap: 32px;
@@ -572,35 +572,29 @@ body {
 
 /* ===== RESPONSIVE ===== */
 
-/* Laptop 1400px */
-@media (max-width: 1400px) {
-  .bd-content { grid-template-columns: 1fr 400px; gap: 24px; padding: 0 32px; }
-  .bd-headline { font-size: 38px; }
-}
-
-/* Laptop 1280px */
+/* Laptop 1280px — tighten spacing, scale text down */
 @media (max-width: 1280px) {
-  .bd-content { grid-template-columns: 1fr 380px; gap: 18px; padding: 0 26px; }
-  .bd-headline { font-size: 32px; }
-  .bd-qr-img { width: 130px; height: 130px; }
+  .bd-content { gap: 22px; padding: 0 28px; }
+  .bd-headline { font-size: 34px; }
+  .bd-qr-img { width: 136px; height: 136px; }
   .bd-qr-headline { font-size: 22px; }
   .bd-body { font-size: 14px; }
 }
 
-/* Small laptop / large tablet 1100px */
+/* Small laptop 1100px */
 @media (max-width: 1100px) {
-  .bd-content { grid-template-columns: 1fr 340px; gap: 14px; padding: 0 18px; }
+  .bd-content { gap: 16px; padding: 0 18px; }
   .bd-header { padding: 12px 18px; }
   .bd-footer { padding: 10px 18px 14px; }
-  .bd-headline { font-size: 27px; }
-  .bd-qr-img { width: 100px; height: 100px; }
+  .bd-headline { font-size: 28px; }
+  .bd-qr-img { width: 110px; height: 110px; }
   .bd-qr-headline { font-size: 19px; }
   .bd-qr-card { padding: 16px 18px; gap: 14px; }
   .bd-body { font-size: 13px; }
   .bd-reviews { padding: 10px 14px; }
 }
 
-/* Tablet / portrait — stack layout */
+/* Tablet / portrait — stack vertically */
 @media (max-width: 880px) {
   body { overflow-y: auto; overflow-x: hidden; }
   .bd-stage { height: auto; min-height: 100dvh; }
