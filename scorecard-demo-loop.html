@@ -256,20 +256,22 @@ body {
 .bd-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: center;
+  grid-template-rows: 1fr auto auto auto 1fr;
+  align-items: start; /* right-col items stack from top of their cell; tablet uses align-self:stretch */
   padding: 0 40px;
-  gap: 32px;
-  height: 100%;
+  gap: 18px 32px;
   min-height: 0;
 }
 
 /* ===== TABLET FRAME ===== */
 .bd-tablet-area {
+  grid-column: 1;
+  grid-row: 1 / span 5;
+  align-self: stretch; /* override parent align-items:start — fill full grid area */
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
   position: relative;
-  height: 100%;
   min-height: 0;
 }
 .bd-tablet {
@@ -346,14 +348,15 @@ body {
 
 /* ===== SIDE PANEL ===== */
 .bd-side {
+  grid-column: 2;
+  grid-row: 2;
   display: flex;
   flex-direction: column;
   justify-content: center;
   gap: 20px;
   max-width: 500px;
-  height: 100%;
   min-height: 0;
-  padding: 20px 0;
+  padding: 0;
 }
 .bd-eyebrow {
   display: inline-flex;
@@ -395,6 +398,8 @@ body {
 
 /* Reviews row */
 .bd-reviews {
+  grid-column: 2;
+  grid-row: 3;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -439,6 +444,8 @@ body {
 
 /* QR card */
 .bd-qr-card {
+  grid-column: 2;
+  grid-row: 4;
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -600,31 +607,52 @@ body {
   body { overflow-y: auto; overflow-x: hidden; }
   .bd-stage { height: auto; min-height: 0; }
 
-  /* Single column grid */
+  /* Single column grid, auto rows, no explicit placement */
   .bd-content {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
     height: auto;
     padding: 12px 20px 20px;
     gap: 14px;
     align-items: start;
   }
 
-  /* Unwrap side panel — its children become direct grid items */
-  .bd-side { display: contents; }
+  /* Restore bd-side as a normal flex container (undo desktop placement) */
+  .bd-side {
+    grid-column: auto;
+    grid-row: auto;
+    order: 1;
+    max-width: 100%;
+    padding: 0;
+    height: auto;
+  }
+  .bd-headline { font-size: 28px; }
+  .bd-body     { font-size: 14px; }
 
-  /* Order: intro copy first, then demo, then social proof, then CTA */
-  .bd-eyebrow    { order: 1; }
-  .bd-headline   { order: 2; font-size: 28px; }
-  .bd-body       { order: 3; font-size: 14px; }
+  /* Demo in slot 2 — tall enough to show scorecard */
   .bd-tablet-area {
-    order: 4;
-    height: 430px;
+    grid-column: auto;
+    grid-row: auto;
+    order: 2;
+    height: 480px;
     min-height: 320px;
     justify-content: center;
   }
-  .bd-tablet     { max-width: 100%; }
-  .bd-reviews    { order: 5; max-width: 100%; }
-  .bd-qr-card    { order: 6; max-width: 100%; }
+  .bd-tablet { max-width: 100%; }
+
+  /* Social proof and CTA below demo */
+  .bd-reviews {
+    grid-column: auto;
+    grid-row: auto;
+    order: 3;
+    max-width: 100%;
+  }
+  .bd-qr-card {
+    grid-column: auto;
+    grid-row: auto;
+    order: 4;
+    max-width: 100%;
+  }
 
   .bd-footer { padding: 8px 20px 12px; }
 }
@@ -878,7 +906,7 @@ body {
       </div>
     </div>
 
-    <!-- Side panel -->
+    <!-- Side panel — intro text -->
     <div class="bd-side">
       <div class="bd-eyebrow">Watch the Demo</div>
       <h1 class="bd-headline">Real diagnosis.<em>Real next step.</em></h1>
@@ -886,28 +914,28 @@ body {
         We're running through real scenarios — four trees, four scores, four recommendations.
         <strong>Scan to run yours in 2 minutes. Free.</strong>
       </p>
+    </div>
 
-      <!-- Reviews -->
-      <div class="bd-reviews">
-        <div class="bd-stars">⭐⭐⭐⭐⭐</div>
-        <div class="bd-reviews-text">
-          <div class="bd-rating">5.0 on Google</div>
-          <div class="bd-rating-sub">Trusted by Hawaii homeowners</div>
-        </div>
-        <div class="bd-reviews-cta">Verified</div>
+    <!-- Reviews — right col row 3 on desktop, below demo on mobile -->
+    <div class="bd-reviews">
+      <div class="bd-stars">⭐⭐⭐⭐⭐</div>
+      <div class="bd-reviews-text">
+        <div class="bd-rating">5.0 on Google</div>
+        <div class="bd-rating-sub">Trusted by Hawaii homeowners</div>
       </div>
+      <div class="bd-reviews-cta">Verified</div>
+    </div>
 
-      <!-- QR card — clicks scroll to live scorecard below on the landing page -->
-      <div class="bd-qr-card bd-qr-link" id="qrScrollBtn" role="button" tabindex="0" aria-label="Scroll down to try the live scorecard">
-        <div class="bd-qr-img">
-          <img id="qrImage" alt="Scan or click to try the scorecard" />
-        </div>
-        <div class="bd-qr-text">
-          <div class="bd-qr-label">Scan or click to try</div>
-          <div class="bd-qr-headline">Check<br>Your Tree</div>
-          <div class="bd-qr-sub">2 minutes · Free · No commitment</div>
-          <div class="bd-qr-arrow">↓</div>
-        </div>
+    <!-- QR card — right col row 4 on desktop, below reviews on mobile -->
+    <div class="bd-qr-card bd-qr-link" id="qrScrollBtn" role="button" tabindex="0" aria-label="Scroll down to try the live scorecard">
+      <div class="bd-qr-img">
+        <img id="qrImage" alt="Scan or click to try the scorecard" />
+      </div>
+      <div class="bd-qr-text">
+        <div class="bd-qr-label">Scan or click to try</div>
+        <div class="bd-qr-headline">Check<br>Your Tree</div>
+        <div class="bd-qr-sub">2 minutes · Free · No commitment</div>
+        <div class="bd-qr-arrow">↓</div>
       </div>
     </div>
 
@@ -1372,4 +1400,31 @@ window._scorecardAPI = {
       } catch(e) {
         console.error('Persona error:', e);
       }
-      a
+      await sleep(T.betweenPersonas);
+      personaIdx = (personaIdx + 1) % PERSONAS.length;
+    }
+  }
+
+  // Allow pause/resume via keyboard
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'p' || e.key === 'P') {
+      stopped = !stopped;
+      if(!stopped) runForever();
+    }
+  });
+
+  window.addEventListener('load', function(){
+    setTimeout(runForever, 900);
+  });
+
+  /* Tell parent iframe our actual rendered height so it can resize on mobile */
+  function reportHeight() {
+    window.parent.postMessage({ type: 'demo-height', height: document.body.scrollHeight }, '*');
+  }
+  window.addEventListener('load', function(){ setTimeout(reportHeight, 150); });
+  window.addEventListener('resize', reportHeight);
+})();
+</script>
+
+</body>
+</html>
