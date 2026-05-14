@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sweet Trees Hawaii — Tree Health Scorecard Demo</title>
+<meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- =========================================================
@@ -594,26 +595,38 @@ body {
   .bd-reviews { padding: 10px 14px; }
 }
 
-/* Tablet / portrait — stack vertically */
+/* Mobile — reflow into single column: text → demo → reviews → QR */
 @media (max-width: 880px) {
   body { overflow-y: auto; overflow-x: hidden; }
-  .bd-stage { height: auto; min-height: 100dvh; }
+  .bd-stage { height: auto; min-height: 0; }
+
+  /* Single column grid */
   .bd-content {
     grid-template-columns: 1fr;
     height: auto;
-    padding: 16px 20px 24px;
-    gap: 20px;
+    padding: 12px 20px 20px;
+    gap: 14px;
+    align-items: start;
   }
-  .bd-side { order: -1; max-width: 100%; height: auto; padding: 4px 0 0; }
+
+  /* Unwrap side panel — its children become direct grid items */
+  .bd-side { display: contents; }
+
+  /* Order: intro copy first, then demo, then social proof, then CTA */
+  .bd-eyebrow    { order: 1; }
+  .bd-headline   { order: 2; font-size: 28px; }
+  .bd-body       { order: 3; font-size: 14px; }
   .bd-tablet-area {
-    height: 72svh;
-    min-height: 360px;
-    max-height: 580px;
+    order: 4;
+    height: 430px;
+    min-height: 320px;
     justify-content: center;
   }
-  .bd-qr-card { max-width: 100%; }
-  .bd-reviews { max-width: 100%; }
-  .bd-headline { font-size: 30px; }
+  .bd-tablet     { max-width: 100%; }
+  .bd-reviews    { order: 5; max-width: 100%; }
+  .bd-qr-card    { order: 6; max-width: 100%; }
+
+  .bd-footer { padding: 8px 20px 12px; }
 }
 
 /* Mobile */
@@ -1359,24 +1372,4 @@ window._scorecardAPI = {
       } catch(e) {
         console.error('Persona error:', e);
       }
-      await sleep(T.betweenPersonas);
-      personaIdx = (personaIdx + 1) % PERSONAS.length;
-    }
-  }
-
-  // Allow pause/resume via keyboard
-  document.addEventListener('keydown', function(e){
-    if(e.key === 'p' || e.key === 'P') {
-      stopped = !stopped;
-      if(!stopped) runForever();
-    }
-  });
-
-  window.addEventListener('load', function(){
-    setTimeout(runForever, 900);
-  });
-})();
-</script>
-
-</body>
-</html>
+      a
