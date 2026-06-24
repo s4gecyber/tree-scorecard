@@ -630,8 +630,8 @@ function buildRes(){
 
   // CTAs
   document.getElementById('stCTA').innerHTML =
-    '<a href="https://tidycal.com/sweettreeshawaii/treecarepro" target="_blank" rel="noopener" class="btn-main">📞 Schedule My Free Consultation</a>'
-    +(prune ? '<a href="https://tidycal.com/sweettreeshawaii/treecarepro-estate" target="_blank" rel="noopener" class="btn-alt">✂️ Schedule a Pruning Assessment</a>' : '');
+    '<a href="https://tidycal.com/sweettreeshawaii/scorecard-consult?utm_source=scorecard&utm_medium=landing_page&utm_campaign=estate_revival&utm_content=results_consult" target="_blank" rel="noopener" class="btn-main">📞 Schedule My Free Consultation</a>'
+    +(prune ? '<a href="https://tidycal.com/sweettreeshawaii/pro-assessment?utm_source=scorecard&utm_medium=landing_page&utm_campaign=estate_revival&utm_content=results_pruning" target="_blank" rel="noopener" class="btn-alt">✂️ Schedule a Pruning Assessment</a>' : '');
 
   // Build rich email summary
   var summaryParts = [];
@@ -677,6 +677,10 @@ function buildRes(){
 
   // Load and pre-fill GHL embed form
   loadGHL();
+
+  // Notify parent landing page that the scorecard was completed
+  // → fires the Meta Pixel 'Lead' event in sc-03-scorecard.html
+  try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
 }
 
 /* ── GHL PRE-FILL ── */
