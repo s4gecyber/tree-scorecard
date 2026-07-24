@@ -208,6 +208,9 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
 .footer{text-align:center;padding:18px 0 6px;font-size:.72rem;color:rgba(255,255,255,.22)}
 .footer a{color:var(--m);text-decoration:none}
 
+/* ── GHL GATE SCREEN ── */
+.ghl-gate-hd{padding:32px 0 20px;text-align:center}
+
 @media(max-width:480px){
   .wlc-ttl{font-size:1.7rem}
   .qprompt{font-size:1.45rem}
@@ -388,6 +391,22 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
       </div>
     </div>
 
+    <!-- GHL GATE — lead capture screen, shown before results -->
+    <div class="sc" id="ss-ghl">
+      <div class="ghl-gate-hd">
+        <div class="qctx">One more step</div>
+        <div class="qprompt" style="font-size:1.3rem">Where should we send your results?</div>
+        <p class="qhint">Enter your name and email — we'll send you the full breakdown.</p>
+      </div>
+      <iframe
+        id="msgsndr-etwO9iN0rTVDCCgIsXN8"
+        src=""
+        scrolling="no"
+        style="width:100%;height:620px;border:none;border-radius:12px;display:block;overflow:hidden;"
+        title="Request Tree Care"
+      ></iframe>
+    </div>
+
     <!-- RESULTS -->
     <div class="sc" id="ss-res">
       <div class="res">
@@ -429,16 +448,6 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
       </div>
     </div>
 
-    <!-- GHL FORM EMBED — shown after quiz, pre-filled via URL params -->
-  <div id="ghlArea" style="display:none;margin-top:16px;">
-    <iframe
-      id="msgsndr-etwO9iN0rTVDCCgIsXN8"
-      src="https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8"
-      scrolling="no"
-      style="width:100%;height:600px;border:none;border-radius:12px;display:block;overflow:hidden;"
-      title="Request Tree Care"
-    ></iframe>
-  </div>
 
 </div><!-- /stage -->
 </div><!-- /card -->
@@ -539,6 +548,33 @@ document.getElementById('bN-q5').addEventListener('click',    function(){ startP
 
 document.getElementById('btnRetake').addEventListener('click', function(){ retake(); });
 
+/* ── GHL SUBMISSION DETECTION ──
+   GHL's widget sends postMessages on height change and (in some versions) on submit.
+   We listen for both: explicit submit signals and height-drop (form → thank-you page). */
+var ghlSubmitted = false;
+var ghlFormShown = false;  // true once the iframe has rendered at form height
+function onGHLSubmit(){
+  if(ghlSubmitted) return;
+  ghlSubmitted = true;
+  goto('res');
+  try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
+}
+window.addEventListener('message', function(e){
+  if(!e.data || cur !== 'ghl') return;
+  var d = e.data;
+  if(typeof d === 'string'){ try{ d = JSON.parse(d); }catch(err){ return; } }
+  if(!d || typeof d !== 'object') return;
+  /* Explicit submit signals from GHL widget */
+  if(d.submitted === true || d.type === 'form_submission' ||
+     d.type === 'formsubmit' || d.eventType === 'form_submit'){ onGHLSubmit(); return; }
+  /* Height-drop heuristic: form is ~500-700px tall; thank-you page is ~100-250px */
+  var h = d.height || d.frameHeight || d.scrollHeight || d.contentHeight;
+  if(typeof h === 'number' && h > 50){
+    if(h > 350) ghlFormShown = true;
+    if(h < 280 && ghlFormShown) onGHLSubmit();
+  }
+});
+
 /* ── RADIO LISTENERS ── */
 document.querySelectorAll('input[type="radio"]').forEach(function(r){
   r.addEventListener('change', function(){
@@ -563,7 +599,7 @@ function startProc(){
     document.getElementById('sp5').classList.remove('on');
     document.getElementById('sp5').classList.add('dn');
     buildRes();
-    goto('res');
+    goto('ghl');
   }, 4100);
 }
 
@@ -675,17 +711,12 @@ function buildRes(){
     issues_summary: richSummary
   };
 
-  // Load and pre-fill GHL embed form
+  // Load GHL form with scorecard data — shown in ss-ghl gate screen
   loadGHL();
-
-  // Notify parent landing page that the scorecard was completed
-  // → fires the Meta Pixel 'Lead' event in sc-03-scorecard.html
-  try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
 }
 
 /* ── GHL PRE-FILL ── */
 function loadGHL(){
-  var area   = document.getElementById('ghlArea');
   var iframe = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
   var base   = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
 
@@ -699,24 +730,12 @@ function loadGHL(){
   });
 
   iframe.src = base + '?' + params.toString();
-  area.style.display = 'block';
-
-  /* Safety-net: if postMessage resize hasn't fired after 2s,
-     expand to a generous fixed height to guarantee no scrollbar */
-  setTimeout(function(){
-    var ghl = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
-    if(ghl && parseInt(ghl.style.height) < 600){
-      ghl.style.height = '650px';
-    }
-    /* Always re-send total height after GHL area is shown */
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    window.parent.postMessage({type:'sth-resize', height:h}, '*');
-  }, 2000);
 }
 
 /* ── RETAKE ── */
 function retake(){
   ans={}; sd={};
+  ghlSubmitted = false; ghlFormShown = false;
   document.querySelectorAll('input[type="radio"]').forEach(function(r){ r.checked=false; });
   ['tree','q1','q2','q3','q4','q5'].forEach(function(q){
     var b = document.getElementById('bN-'+q); if(b) b.classList.remove('on');
@@ -727,12 +746,8 @@ function retake(){
     if(i===0) el.classList.add('on');
   });
   document.getElementById('stArc').style.strokeDashoffset = '207.3';
-
-  // Reset GHL iframe
-  var iframe = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
-  iframe.src = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
-  document.getElementById('ghlArea').style.display = 'none';
-
+  // Clear GHL iframe so it reloads fresh with next scorecard's data
+  document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8').src = '';
   goto('welcome');
 }
 
