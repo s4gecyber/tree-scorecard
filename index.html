@@ -208,8 +208,12 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
 .footer{text-align:center;padding:18px 0 6px;font-size:.72rem;color:rgba(255,255,255,.22)}
 .footer a{color:var(--m);text-decoration:none}
 
-/* ── GHL GATE SCREEN ── */
-.ghl-gate-hd{padding:32px 0 20px;text-align:center}
+/* ── GHL EMAIL SECTION (below results) ── */
+.ghl-area-hd{padding:24px 0 14px}
+.ghl-confirm{background:rgba(106,171,135,.12);border:1px solid rgba(106,171,135,.3);
+  border-radius:12px;padding:18px;text-align:center;margin-top:8px}
+.ghl-confirm-ico{font-size:1.4rem;display:block;margin-bottom:8px}
+.ghl-confirm-txt{color:rgba(255,255,255,.72);font-size:.86rem;line-height:1.6;margin:0}
 
 @media(max-width:480px){
   .wlc-ttl{font-size:1.7rem}
@@ -391,22 +395,6 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
       </div>
     </div>
 
-    <!-- GHL GATE — lead capture screen, shown before results -->
-    <div class="sc" id="ss-ghl">
-      <div class="ghl-gate-hd">
-        <div class="qctx">One more step</div>
-        <div class="qprompt" style="font-size:1.3rem">Where should we send your results?</div>
-        <p class="qhint">Enter your name and email — we'll send you the full breakdown.</p>
-      </div>
-      <iframe
-        id="msgsndr-etwO9iN0rTVDCCgIsXN8"
-        src=""
-        scrolling="no"
-        style="width:100%;height:620px;border:none;border-radius:12px;display:block;overflow:hidden;"
-        title="Request Tree Care"
-      ></iframe>
-    </div>
-
     <!-- RESULTS -->
     <div class="sc" id="ss-res">
       <div class="res">
@@ -436,7 +424,26 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
 
         <div class="cta" id="stCTA"></div>
 
-        <!-- REPORT UNLOCK -->
+        <!-- EMAIL REPORT — GHL form below results -->
+        <div id="ghlArea" style="display:none;margin-top:20px;">
+          <div class="ghl-area-hd">
+            <div class="stitle" style="margin-top:0">Get your full report by email</div>
+            <p class="qhint" style="margin-bottom:14px">Enter your name and email — we'll send the complete breakdown plus your personalized care plan.</p>
+          </div>
+          <iframe
+            id="msgsndr-etwO9iN0rTVDCCgIsXN8"
+            src=""
+            scrolling="no"
+            style="width:100%;height:600px;border:none;border-radius:12px;display:block;overflow:hidden;"
+            title="Request Tree Care"
+          ></iframe>
+          <div id="ghlConfirm" style="display:none;">
+            <div class="ghl-confirm">
+              <span class="ghl-confirm-ico">📬</span>
+              <p class="ghl-confirm-txt">Your full report is on its way — check your inbox in the next few minutes.</p>
+            </div>
+          </div>
+        </div>
 
         <button class="btn-retake" id="btnRetake">↩ Start over</button>
         <div class="footer">
@@ -548,32 +555,7 @@ document.getElementById('bN-q5').addEventListener('click',    function(){ startP
 
 document.getElementById('btnRetake').addEventListener('click', function(){ retake(); });
 
-/* ── GHL SUBMISSION DETECTION ──
-   GHL's widget sends postMessages on height change and (in some versions) on submit.
-   We listen for both: explicit submit signals and height-drop (form → thank-you page). */
-var ghlSubmitted = false;
-var ghlFormShown = false;  // true once the iframe has rendered at form height
-function onGHLSubmit(){
-  if(ghlSubmitted) return;
-  ghlSubmitted = true;
-  goto('res');
-  try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
-}
-window.addEventListener('message', function(e){
-  if(!e.data || cur !== 'ghl') return;
-  var d = e.data;
-  if(typeof d === 'string'){ try{ d = JSON.parse(d); }catch(err){ return; } }
-  if(!d || typeof d !== 'object') return;
-  /* Explicit submit signals from GHL widget */
-  if(d.submitted === true || d.type === 'form_submission' ||
-     d.type === 'formsubmit' || d.eventType === 'form_submit'){ onGHLSubmit(); return; }
-  /* Height-drop heuristic: form is ~500-700px tall; thank-you page is ~100-250px */
-  var h = d.height || d.frameHeight || d.scrollHeight || d.contentHeight;
-  if(typeof h === 'number' && h > 50){
-    if(h > 350) ghlFormShown = true;
-    if(h < 280 && ghlFormShown) onGHLSubmit();
-  }
-});
+/* GHL submission detection lives inside loadGHL() via iframe.onload */
 
 /* ── RADIO LISTENERS ── */
 document.querySelectorAll('input[type="radio"]').forEach(function(r){
@@ -599,7 +581,7 @@ function startProc(){
     document.getElementById('sp5').classList.remove('on');
     document.getElementById('sp5').classList.add('dn');
     buildRes();
-    goto('ghl');
+    goto('res');
   }, 4100);
 }
 
@@ -711,14 +693,16 @@ function buildRes(){
     issues_summary: richSummary
   };
 
-  // Load GHL form with scorecard data — shown in ss-ghl gate screen
+  // Load GHL form with scorecard data — shown below results in ghlArea
   loadGHL();
 }
 
 /* ── GHL PRE-FILL ── */
 function loadGHL(){
-  var iframe = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
-  var base   = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
+  var area    = document.getElementById('ghlArea');
+  var iframe  = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
+  var confirm = document.getElementById('ghlConfirm');
+  var base    = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
 
   var params = new URLSearchParams({
     'tree_health_score': sd.level || '',
@@ -729,13 +713,24 @@ function loadGHL(){
     'issues_summary':    sd.issues_summary || ''
   });
 
+  /* Track loads: 1st = form loaded, 2nd = thank-you page = submitted */
+  var loadCount = 0;
+  iframe.onload = function(){
+    loadCount++;
+    if(loadCount >= 2){
+      iframe.style.display = 'none';
+      confirm.style.display = 'block';
+      try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
+    }
+  };
+
   iframe.src = base + '?' + params.toString();
+  area.style.display = 'block';
 }
 
 /* ── RETAKE ── */
 function retake(){
   ans={}; sd={};
-  ghlSubmitted = false; ghlFormShown = false;
   document.querySelectorAll('input[type="radio"]').forEach(function(r){ r.checked=false; });
   ['tree','q1','q2','q3','q4','q5'].forEach(function(q){
     var b = document.getElementById('bN-'+q); if(b) b.classList.remove('on');
@@ -746,8 +741,13 @@ function retake(){
     if(i===0) el.classList.add('on');
   });
   document.getElementById('stArc').style.strokeDashoffset = '207.3';
-  // Clear GHL iframe so it reloads fresh with next scorecard's data
-  document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8').src = '';
+  // Reset GHL area
+  var iframe = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
+  iframe.onload = null;
+  iframe.src = '';
+  iframe.style.display = 'block';
+  document.getElementById('ghlArea').style.display = 'none';
+  document.getElementById('ghlConfirm').style.display = 'none';
   goto('welcome');
 }
 
