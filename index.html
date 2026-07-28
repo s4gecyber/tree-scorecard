@@ -227,10 +227,10 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
 .gate-cont-hint{font-family:'Instrument Sans',sans-serif;font-size:.82rem;
   color:rgba(255,255,255,.45);margin-bottom:12px}
 .gate-btn{display:block;width:100%;max-width:340px;margin:0 auto;
-  padding:16px 28px;background:var(--m);border:none;border-radius:12px;
-  color:#fff;font-family:'Instrument Sans',sans-serif;font-size:1.02rem;
+  padding:17px 28px;background:var(--s);border:none;border-radius:12px;
+  color:var(--f);font-family:'Instrument Sans',sans-serif;font-size:1.05rem;
   font-weight:700;cursor:pointer;transition:background .18s,transform .1s}
-.gate-btn:hover{background:var(--l)}
+.gate-btn:hover{background:#e8922a}
 .gate-btn:active{transform:scale(.98)}
 
 /* ── LEAD CONFIRMATION (shown under CTA buttons after submit) ── */
@@ -627,6 +627,7 @@ document.getElementById('btnRetake').addEventListener('click', function(){ retak
    visitor submits it. On submission we fire the Meta Pixel 'Lead'
    (via the parent) and reveal the results — no thank-you-page jump. */
 var leadCaptured = false;
+var ghlFormLoaded = false;   // true once the gate form has rendered once
 
 function onLeadCaptured(){
   if(leadCaptured) return;
@@ -649,7 +650,7 @@ function armGateFallback(){
   setTimeout(function(){
     var c = document.getElementById('gateContinue');
     if(c && !leadCaptured) c.style.display = 'block';
-  }, 3000);
+  }, 800);
 }
 var _bsr = document.getElementById('btnShowResults');
 if(_bsr) _bsr.addEventListener('click', onLeadCaptured);
@@ -694,9 +695,10 @@ function startProc(){
   setTimeout(function(){
     document.getElementById('sp5').classList.remove('on');
     document.getElementById('sp5').classList.add('dn');
-    buildRes();          // compute results + pre-fill the GHL gate (results stay hidden)
+    buildRes();          // compute results + store score data (results stay hidden)
+    loadGHL();           // load + pre-fill the GHL gate form, and watch for submit
     goto('gate');        // show the lead-capture form
-    armGateFallback();   // reveal the manual "view results" link after a delay
+    armGateFallback();   // reveal the orange "Show My Results" button
   }, 4100);
 }
 
@@ -808,10 +810,8 @@ function buildRes(){
     issues_summary: richSummary
   };
 
-  // Pre-fill the GHL gate form with the score data. Results remain hidden
-  // until the form is submitted — see onLeadCaptured(). The Meta Pixel 'Lead'
-  // event now fires on submission (in onLeadCaptured), not here.
-  loadGHL();
+  // Score data is now stored in sd. The GHL gate form is loaded when we enter
+  // the gate (startProc → loadGHL). Results stay hidden until submit.
 }
 
 /* ── GHL PRE-FILL ── */
@@ -828,6 +828,16 @@ function loadGHL(){
     'has_zero_score':    sd.has_critical === 'YES' ? 'YES' : 'NO',
     'issues_summary':    sd.issues_summary || ''
   });
+
+  /* AUTO-ADVANCE: watch the form iframe for a navigation on submit.
+     The first load below = the form rendering. Any later load while the
+     visitor is on the gate = the form navigated on submit (a redirect is
+     set on the GHL form) → reveal the results automatically. */
+  ghlFormLoaded = false;
+  iframe.onload = function(){
+    if(!ghlFormLoaded){ ghlFormLoaded = true; return; }  // first load = form ready
+    if(cur === 'gate' && !leadCaptured){ onLeadCaptured(); }
+  };
 
   iframe.src = base + '?' + params.toString();
   area.style.display = 'block';
