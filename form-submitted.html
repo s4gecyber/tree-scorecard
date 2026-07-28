@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report on its way…</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+  html,body{margin:0;height:100%;background:#1c3d2e;color:#d4ead9;
+    font-family:'Instrument Sans',system-ui,sans-serif;
+    display:flex;align-items:center;justify-content:center;text-align:center}
+  .wrap{padding:24px}
+  .ic{font-size:2.4rem;display:block;margin-bottom:10px}
+  h1{font-size:1.05rem;font-weight:600;margin:0 0 6px}
+  p{font-size:.85rem;color:rgba(255,255,255,.55);margin:0}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <span class="ic">🌿</span>
+    <h1>Thanks — your report is on its way!</h1>
+    <p>Loading your results…</p>
+  </div>
+<script>
+  /* This page is the GHL form's "On submit → redirect" target.
+     It is served from the SAME origin as the scorecard, so it can signal
+     the scorecard (its parent frame) that the lead form was submitted.
+     The scorecard then reveals the results and fires the Meta Pixel 'Lead'.
+     Deploy this to the tree-scorecard GitHub repo alongside index.html. */
+  (function(){
+    var msg = { type: 'ghl-submitted' };
+    try { if(window.parent && window.parent !== window) window.parent.postMessage(msg, '*'); } catch(e){}
+    try { if(window.top && window.top !== window)       window.top.postMessage(msg, '*'); } catch(e){}
+  })();
+</script>
+</body>
+</html>
