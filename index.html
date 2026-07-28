@@ -223,10 +223,15 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
   color:var(--w);line-height:1.25;margin-bottom:8px}
 .gate-ttl em{font-style:italic;color:var(--s)}
 .gate-sub{color:rgba(255,255,255,.6);font-size:.9rem;line-height:1.6}
-.gate-skip{display:none;margin:16px auto 0;background:transparent;border:none;
-  color:rgba(255,255,255,.35);font-family:'Instrument Sans',sans-serif;
-  font-size:.82rem;cursor:pointer;text-decoration:underline}
-.gate-skip:hover{color:rgba(255,255,255,.65)}
+.gate-cont{display:none;text-align:center;margin-top:22px}
+.gate-cont-hint{font-family:'Instrument Sans',sans-serif;font-size:.82rem;
+  color:rgba(255,255,255,.45);margin-bottom:12px}
+.gate-btn{display:block;width:100%;max-width:340px;margin:0 auto;
+  padding:16px 28px;background:var(--m);border:none;border-radius:12px;
+  color:#fff;font-family:'Instrument Sans',sans-serif;font-size:1.02rem;
+  font-weight:700;cursor:pointer;transition:background .18s,transform .1s}
+.gate-btn:hover{background:var(--l)}
+.gate-btn:active{transform:scale(.98)}
 
 /* ── LEAD CONFIRMATION (shown under CTA buttons after submit) ── */
 .lead-confirm{display:flex;gap:12px;align-items:flex-start;
@@ -252,7 +257,7 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
   background:rgba(255,255,255,.1);overflow:hidden}
 .thanks-bar::after{content:'';display:block;height:100%;width:0;
   background:linear-gradient(90deg,var(--m),var(--s));
-  animation:thanksFill 1.7s ease forwards}
+  animation:thanksFill 2s ease forwards}
 @keyframes thanksFill{to{width:100%}}
 </style>
 </head>
@@ -447,8 +452,13 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
             title="Get Your Tree Health Report"
           ></iframe>
         </div>
-        <!-- Fallback: appears after ~15s in case submit-detection doesn't fire -->
-        <button class="gate-skip" id="btnShowResults" type="button">Already entered your info? View my results →</button>
+        <!-- Continue control — appears a few seconds after the form loads.
+             Fill in the form above (captures the lead), then tap to see your
+             report. If the GHL redirect is wired, this happens automatically. -->
+        <div class="gate-cont" id="gateContinue">
+          <p class="gate-cont-hint">Submitted the form above? Your report is on its way.</p>
+          <button class="gate-btn" id="btnShowResults" type="button">Show My Results →</button>
+        </div>
       </div>
     </div>
 
@@ -628,18 +638,18 @@ function onLeadCaptured(){
   // (This replaces the old thank-you-page jump. GHL's backend can ALSO
   //  fire a conversion pixel independently if configured.)
   try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
-  // Brief thank-you beat, then reveal the full report (same as the original).
+  // 2-second thank-you confirmation, then auto-reveal the full report.
   goto('thanks');
-  setTimeout(function(){ goto('res'); }, 1800);
+  setTimeout(function(){ goto('res'); }, 2000);
 }
 
 /* Reveal a manual "view results" link after a delay, so a visitor is
    never stuck if the automatic submit-detection fails to fire. */
 function armGateFallback(){
   setTimeout(function(){
-    var b = document.getElementById('btnShowResults');
-    if(b && !leadCaptured) b.style.display = 'block';
-  }, 15000);
+    var c = document.getElementById('gateContinue');
+    if(c && !leadCaptured) c.style.display = 'block';
+  }, 3000);
 }
 var _bsr = document.getElementById('btnShowResults');
 if(_bsr) _bsr.addEventListener('click', onLeadCaptured);
@@ -854,7 +864,7 @@ function retake(){
   if(iframe) iframe.src = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
   leadCaptured = false;
   var conf = document.getElementById('stConfirm');       if(conf) conf.style.display = 'none';
-  var bsr2 = document.getElementById('btnShowResults');  if(bsr2) bsr2.style.display = 'none';
+  var cont = document.getElementById('gateContinue');    if(cont) cont.style.display = 'none';
 
   goto('welcome');
 }
