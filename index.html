@@ -401,8 +401,9 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
           style="width:100%;height:600px;border:none;border-radius:12px;display:block;overflow:hidden;"
           title="Get Your Tree Health Report"
         ></iframe>
-        <!-- Failsafe: appears ONLY 1s after the form is submitted -->
-        <button class="btn-main" id="btnShowResults" type="button" style="display:none;margin-top:14px;">See My Results →</button>
+        <!-- Failsafe only: hidden until 1s after submit, and only if the
+             results didn't auto-display. -->
+        <button class="btn-main" id="btnShowResults" type="button" style="display:none;margin-top:16px;">See My Results →</button>
       </div>
     </div>
 
@@ -456,7 +457,8 @@ var CATS = ['fruit','pest','leaf','canopy','trunk'];
 var ans  = {};
 var cur  = 'welcome';
 var sd   = {};
-var leadDone = false;   // guards the submit → results transition
+var leadDone = false;   // guards the submit → results transition (runs once)
+var ghlMaxH  = 0;       // tallest height the GHL form has reported on the gate
 
 /* ── FINDINGS DATA ── */
 var FD = {
@@ -546,7 +548,7 @@ document.getElementById('bN-q5').addEventListener('click',    function(){ startP
 
 document.getElementById('btnRetake').addEventListener('click', function(){ retake(); });
 
-/* "See My Results" failsafe button (revealed 1s after submit) */
+/* "See My Results" failsafe button — force the results to display */
 document.getElementById('btnShowResults').addEventListener('click', function(){ showResults(); });
 
 /* ── RADIO LISTENERS ── */
@@ -713,18 +715,22 @@ function loadGHL(){
   iframe.src = base + '?' + params.toString();
 }
 
-/* Called once the GHL form is submitted (2nd iframe load). */
+/* Reveal the results + fire the Meta Pixel 'Lead' via the parent landing page.
+   Triggered by the "See My Results" button (the reliable path), and as a bonus
+   by loadCount>=2 if the form ever reloads on submit. Guarded to run once. */
 function onGhlSubmitted(){
   if(leadDone) return;
   leadDone = true;
-  // Fire the Meta Pixel 'Lead' event via the parent landing page
+  // fire the Meta Pixel 'Lead' via the parent landing page
   try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
-  // (1) quickly auto-direct to the results
-  setTimeout(showResults, 400);
-  // (2) reveal the manual "See My Results" button 1s after submit (failsafe)
+  // (2) auto-display results immediately, via the normal scorecard flow
+  showResults();
+  // (3) failsafe: if the display somehow hung, reveal a button 1s later
   setTimeout(function(){
-    var b = document.getElementById('btnShowResults');
-    if(b && cur === 'gate') b.style.display = 'block';
+    if(cur !== 'res'){
+      var b = document.getElementById('btnShowResults');
+      if(b) b.style.display = 'block';
+    }
   }, 1000);
 }
 
@@ -733,9 +739,29 @@ function showResults(){
   goto('res');
 }
 
+/* SUBMIT SIGNAL — this GHL form shows its thank-you inline (no reload), which
+   collapses the tall form to a short message; GHL re-reports the smaller
+   height. On the gate, that collapse means the lead was submitted → display
+   the results. (console.log left in to tune thresholds if ever needed.) */
+window.addEventListener('message', function(e){
+  if(!e.data || leadDone || cur !== 'gate') return;
+  var d = e.data;
+  if(typeof d === 'string'){ try { d = JSON.parse(d); } catch(_){ return; } }
+  var h = (typeof d === 'number') ? d
+        : (d && typeof d === 'object' && d.type !== 'sth-resize')
+          ? (d.height || d.frameHeight || d.scrollHeight || d.contentHeight || null)
+          : null;
+  if(typeof h !== 'number' || h < 40) return;
+  if(h > ghlMaxH) ghlMaxH = h;
+  try { console.log('[scorecard] GHL height', h, 'max', ghlMaxH); } catch(_){}
+  if(ghlMaxH > 420 && h < 340){        // tall form collapsed to a short thank-you
+    onGhlSubmitted();
+  }
+});
+
 /* ── RETAKE ── */
 function retake(){
-  ans={}; sd={}; leadDone=false;
+  ans={}; sd={}; leadDone=false; ghlMaxH=0;
   document.querySelectorAll('input[type="radio"]').forEach(function(r){ r.checked=false; });
   ['tree','q1','q2','q3','q4','q5'].forEach(function(q){
     var b = document.getElementById('bN-'+q); if(b) b.classList.remove('on');
