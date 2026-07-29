@@ -452,24 +452,6 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
             title="Get Your Tree Health Report"
           ></iframe>
         </div>
-        <!-- Continue control — appears a few seconds after the form loads.
-             Fill in the form above (captures the lead), then tap to see your
-             report. If the GHL redirect is wired, this happens automatically. -->
-        <div class="gate-cont" id="gateContinue">
-          <p class="gate-cont-hint">Submitted the form above? Your report is on its way.</p>
-          <button class="gate-btn" id="btnShowResults" type="button">Show My Results →</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- THANK-YOU TRANSITION — brief beat after the gate is submitted,
-         then the full report is revealed exactly like the original. -->
-    <div class="sc" id="ss-thanks">
-      <div class="thanks">
-        <div class="thanks-check">✓</div>
-        <h2 class="thanks-ttl">You're all <em>set!</em></h2>
-        <p class="thanks-sub">Unlocking your full tree health report…</p>
-        <div class="thanks-bar"></div>
       </div>
     </div>
 
@@ -636,24 +618,12 @@ function onLeadCaptured(){
   var c = document.getElementById('stConfirm');
   if(c) c.style.display = 'flex';
   // Notify the parent landing page → fires the Meta Pixel 'Lead' event.
-  // (This replaces the old thank-you-page jump. GHL's backend can ALSO
-  //  fire a conversion pixel independently if configured.)
+  // (This replaces the old thank-you-page jump.)
   try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
-  // 2-second thank-you confirmation, then auto-reveal the full report.
-  goto('thanks');
-  setTimeout(function(){ goto('res'); }, 2000);
+  // Auto-advance to the full report 0.2s after submit, with a 1s failsafe.
+  setTimeout(function(){ goto('res'); }, 200);
+  setTimeout(function(){ if(cur !== 'res') goto('res'); }, 1000);
 }
-
-/* Reveal a manual "view results" link after a delay, so a visitor is
-   never stuck if the automatic submit-detection fails to fire. */
-function armGateFallback(){
-  setTimeout(function(){
-    var c = document.getElementById('gateContinue');
-    if(c && !leadCaptured) c.style.display = 'block';
-  }, 800);
-}
-var _bsr = document.getElementById('btnShowResults');
-if(_bsr) _bsr.addEventListener('click', onLeadCaptured);
 
 /* Submission signal from the GHL form.
    PRIMARY path: set the GHL form's "On submit → redirect" to the
@@ -697,8 +667,7 @@ function startProc(){
     document.getElementById('sp5').classList.add('dn');
     buildRes();          // compute results + store score data (results stay hidden)
     loadGHL();           // load + pre-fill the GHL gate form, and watch for submit
-    goto('gate');        // show the lead-capture form
-    armGateFallback();   // reveal the orange "Show My Results" button
+    goto('gate');        // show the lead-capture form (auto-advances on submit)
   }, 4100);
 }
 
@@ -874,7 +843,6 @@ function retake(){
   if(iframe) iframe.src = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
   leadCaptured = false;
   var conf = document.getElementById('stConfirm');       if(conf) conf.style.display = 'none';
-  var cont = document.getElementById('gateContinue');    if(cont) cont.style.display = 'none';
 
   goto('welcome');
 }
