@@ -652,6 +652,7 @@ var gateShownAt    = 0;      // timestamp the gate became visible
 var formPeakH      = 0;      // tallest GHL height seen while on the gate
 var collapseTimer  = null;   // debounce for the collapse trigger
 var deadEndTimer   = null;   // last-resort manual-link timer
+var ghlGateLoads   = 0;      // iframe load events counted while on the gate
 
 /* ── TUNABLE THRESHOLDS ──────────────────────────────────────────────
    Watch the browser console (STH_DEBUG=true) during a real submission to
@@ -662,7 +663,7 @@ var COLLAPSE_RATIO      = 0.55;   // …then drop below this fraction of the pea
 var COLLAPSE_MIN_DWELL  = 3500;   // …and only after this long on the gate (skips load jitter)
 var COLLAPSE_DEBOUNCE   = 500;    // …and stay collapsed this long before we commit
 var FALLBACK_AFTER_TRIGGER = 2000;// show manual link if results didn't render 2s after trigger
-var DEAD_END_MS         = 45000;  // absolute last-resort manual link (no trigger ever seen)
+var DEAD_END_MS         = 20000;  // backstop only — should NEVER fire once the payload trigger works
 
 function dbg(){ if(STH_DEBUG && window.console){ try{ console.log.apply(console, ['[STH]'].concat([].slice.call(arguments))); }catch(_){}} }
 
@@ -716,6 +717,27 @@ function armDeadEndSafetyNet(){
 var _bsr = document.getElementById('btnShowResults');
 if(_bsr) _bsr.addEventListener('click', function(){ onGhlSubmit('manual-button'); });
 
+/* ── TRIGGER (b): iframe LOAD event ──────────────────────────────────
+   If GHL navigates its iframe on submit (many "show message" / redirect
+   setups do), the parent receives a load event WITHOUT reading contents.
+   First load while on the gate = the pre-filled form; a later one = the
+   submit/thank-you view. Also logs every load so we can see the real
+   sequence in the console. */
+var _ghlIf = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
+if(_ghlIf){
+  _ghlIf.addEventListener('load', function(){
+    if(cur === 'gate'){
+      ghlGateLoads++;
+      dbg('iframe LOAD #'+ghlGateLoads+' on gate (dwell '+(Date.now()-gateShownAt)+'ms)');
+      if(ghlGateLoads >= 2 && !submitDetected){
+        onGhlSubmit('iframe-load#'+ghlGateLoads);
+      }
+    } else {
+      dbg('iframe load (cur='+cur+')');
+    }
+  });
+}
+
 /* ── SUBMIT DETECTION via GHL messages ──────────────────────────────
    (1) Explicit submit-type messages some embeds send.
    (2) The height-collapse heuristic described above. */
@@ -727,7 +749,31 @@ window.addEventListener('message', function(e){
   /* Ignore our own outgoing resize pings */
   if(d && d.type === 'sth-resize') return;
 
-  /* (1) Explicit submit signals */
+  /* DIAGNOSTIC: log every inbound cross-origin message so we can see
+     exactly what GHL emits on submit. Read these in the console. */
+  if(STH_DEBUG){ try { dbg('MSG', e.origin, (typeof d === 'object' ? JSON.stringify(d).slice(0,260) : String(d))); } catch(_){} }
+
+  /* ── (0) GHL's REAL submit signal — the primary, reliable trigger ──
+     GHL/LeadConnector does NOT post a tidy {type:'form-submitted'}.
+     On a successful FORM submission it posts an ARRAY whose payload
+     element is a JSON string containing the new contact's fields
+     (customer_id + email / full_name). A BOOKING posts an array whose
+     first element is 'msgsndr-booking-complete'. Match either. */
+  if(Array.isArray(d)){
+    if(d[0] === 'msgsndr-booking-complete'){ onGhlSubmit('booking-complete'); return; }
+    for(var _i = 0; _i < d.length; _i++){
+      var _el = d[_i], _s = '';
+      if(typeof _el === 'string')      _s = _el;
+      else if(_el && typeof _el === 'object'){ try { _s = JSON.stringify(_el); } catch(_){ _s = ''; } }
+      if(_s && _s.indexOf('customer_id') > -1 &&
+         (_s.indexOf('email') > -1 || _s.indexOf('full_name') > -1 || _s.indexOf('full_address') > -1)){
+        onGhlSubmit('ghl-form-payload');
+        return;
+      }
+    }
+  }
+
+  /* (1) Explicit submit signals (secondary safety net) */
   var t = (d && (d.type || d.event || d.action || d.message)) || '';
   t = String(t).toLowerCase();
   if(t.indexOf('ghl-submitted') > -1 || t.indexOf('form-submit') > -1 ||
@@ -791,9 +837,10 @@ function startProc(){
     document.getElementById('sp5').classList.add('dn');
     buildRes();              // compute results + pre-fill the GHL gate (results stay hidden)
     goto('gate');            // show the lead-capture form
-    gateShownAt = Date.now();// start the resize-sequence clock
-    formPeakH   = 0;         // reset the settled-form height learner
-    armDeadEndSafetyNet();   // last-resort only (45s) — never a premature button
+    gateShownAt  = Date.now();// start the resize-sequence clock
+    formPeakH    = 0;         // reset the settled-form height learner
+    ghlGateLoads = 0;         // reset iframe-load counter for this gate view
+    armDeadEndSafetyNet();   // interim last-resort — never a premature button
   }, 4100);
 }
 
@@ -962,6 +1009,7 @@ function retake(){
   submitDetected = false;
   gateShownAt    = 0;
   formPeakH      = 0;
+  ghlGateLoads   = 0;
   clearTimeout(collapseTimer);
   clearTimeout(deadEndTimer);
   var conf = document.getElementById('stConfirm');       if(conf) conf.style.display = 'none';
