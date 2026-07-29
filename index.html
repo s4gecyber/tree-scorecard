@@ -452,11 +452,13 @@ body{font-family:'Instrument Sans',sans-serif;padding:8px 0 40px}
             title="Get Your Tree Health Report"
           ></iframe>
         </div>
-        <!-- Continue control — appears a few seconds after the form loads.
-             Fill in the form above (captures the lead), then tap to see your
-             report. If the GHL redirect is wired, this happens automatically. -->
+        <!-- Continue control — HIDDEN by default (.gate-cont{display:none}).
+             It is revealed ONLY as a fallback: (a) 2s after a submit is
+             detected but the results somehow didn't appear, or (b) the
+             long dead-end safety net. It is never shown on a blind timer
+             before submission. See armGateFallback2s / armDeadEndSafetyNet. -->
         <div class="gate-cont" id="gateContinue">
-          <p class="gate-cont-hint">Submitted the form above? Your report is on its way.</p>
+          <p class="gate-cont-hint">Already submitted the form above? Your report is ready.</p>
           <button class="gate-btn" id="btnShowResults" type="button">Show My Results →</button>
         </div>
       </div>
@@ -622,52 +624,145 @@ document.getElementById('bN-q5').addEventListener('click',    function(){ startP
 
 document.getElementById('btnRetake').addEventListener('click', function(){ retake(); });
 
-/* ── LEAD GATE → RESULTS ───────────────────────────────────────────
-   The GHL form is the gate: the score/results stay hidden until the
-   visitor submits it. On submission we fire the Meta Pixel 'Lead'
-   (via the parent) and reveal the results — no thank-you-page jump. */
-var leadCaptured = false;
+/* ═══════════════════════════════════════════════════════════════════
+   LEAD GATE → RESULTS  (height-collapse trigger)
+   ───────────────────────────────────────────────────────────────────
+   We cannot read inside the GHL iframe (cross-origin) and a redirect
+   breaks the flow. What GHL DOES broadcast to us, cross-origin, is the
+   embedded form's HEIGHT (that's what powers the auto-resize below).
 
+   The resize sequence during a run is:
+     1. processing → gate shown        (our card resizes)
+     2. GHL form renders + settles     (a few GHL height messages, growing
+                                         to the full form height ≈ 600px)
+     3. …quiet…
+     4. VISITOR SUBMITS → GHL swaps the tall form for a short success
+        message ("Your care plan is on its way…") → the reported height
+        COLLAPSES. <-- this downward resize is our trigger.
+
+   So we watch GHL's height messages while on the gate, learn the settled
+   form height (peak), and when the height collapses well below that peak
+   after the form has had time to settle, we treat it as a submission and
+   auto-reveal the results. The manual button is only a fallback.
+   ═══════════════════════════════════════════════════════════════════ */
+
+var leadCaptured   = false;  // results have been revealed
+var submitDetected = false;  // a submit trigger has fired (height collapse or message)
+var gateShownAt    = 0;      // timestamp the gate became visible
+var formPeakH      = 0;      // tallest GHL height seen while on the gate
+var collapseTimer  = null;   // debounce for the collapse trigger
+var deadEndTimer   = null;   // last-resort manual-link timer
+
+/* ── TUNABLE THRESHOLDS ──────────────────────────────────────────────
+   Watch the browser console (STH_DEBUG=true) during a real submission to
+   read the actual GHL heights, then adjust these if needed. */
+var STH_DEBUG           = true;   // set false for production once tuned
+var COLLAPSE_MIN_FORM_H = 400;    // form must have grown at least this tall first
+var COLLAPSE_RATIO      = 0.55;   // …then drop below this fraction of the peak
+var COLLAPSE_MIN_DWELL  = 3500;   // …and only after this long on the gate (skips load jitter)
+var COLLAPSE_DEBOUNCE   = 500;    // …and stay collapsed this long before we commit
+var FALLBACK_AFTER_TRIGGER = 2000;// show manual link if results didn't render 2s after trigger
+var DEAD_END_MS         = 45000;  // absolute last-resort manual link (no trigger ever seen)
+
+function dbg(){ if(STH_DEBUG && window.console){ try{ console.log.apply(console, ['[STH]'].concat([].slice.call(arguments))); }catch(_){}} }
+
+/* Reveal the full report. Fires the parent Meta Pixel 'Lead' event,
+   shows the "check your email" confirmation, then gate → thanks → results. */
 function onLeadCaptured(){
   if(leadCaptured) return;
   leadCaptured = true;
-  // Reveal the "check your email" confirmation under the CTA buttons
+  clearTimeout(deadEndTimer);
   var c = document.getElementById('stConfirm');
   if(c) c.style.display = 'flex';
-  // Notify the parent landing page → fires the Meta Pixel 'Lead' event.
-  // (This replaces the old thank-you-page jump. GHL's backend can ALSO
-  //  fire a conversion pixel independently if configured.)
   try { window.parent.postMessage({type:'sth-complete'}, '*'); } catch(e){}
-  // 2-second thank-you confirmation, then auto-reveal the full report.
+  dbg('revealing results');
   goto('thanks');
   setTimeout(function(){ goto('res'); }, 2000);
 }
 
-/* Reveal a manual "view results" link after a delay, so a visitor is
-   never stuck if the automatic submit-detection fails to fire. */
-function armGateFallback(){
-  setTimeout(function(){
-    var c = document.getElementById('gateContinue');
-    if(c && !leadCaptured) c.style.display = 'block';
-  }, 3000);
+/* TRIGGER handler — the moment we believe the form was submitted.
+   Requirement: results auto-display on this trigger; and IF they haven't
+   displayed within 2s, surface the manual "Show My Results" link. */
+function onGhlSubmit(reason){
+  if(submitDetected) return;
+  submitDetected = true;
+  clearTimeout(deadEndTimer);
+  dbg('SUBMIT trigger →', reason);
+  onLeadCaptured();                     // primary: auto-reveal
+  setTimeout(function(){                // 2s backup: only if we're somehow still on the gate
+    if(cur === 'gate'){
+      var c = document.getElementById('gateContinue');
+      if(c){ c.style.display = 'block'; dbg('2s fallback link shown'); }
+    }
+  }, FALLBACK_AFTER_TRIGGER);
 }
-var _bsr = document.getElementById('btnShowResults');
-if(_bsr) _bsr.addEventListener('click', onLeadCaptured);
 
-/* Submission signal from the GHL form.
-   PRIMARY path: set the GHL form's "On submit → redirect" to the
-   same-origin helper page (form-submitted.html), which posts
-   {type:'ghl-submitted'} up to this scorecard. We also loosely sniff
-   common embed submit messages as a secondary safety net. */
+/* DEAD-END SAFETY NET — if no submit trigger is ever detected (thresholds
+   off, GHL sends nothing), reveal the manual link after a long delay so a
+   visitor is never permanently stuck. This is the ONLY thing that can show
+   the link before a real submit, and only after 45s. Delete this call in
+   startProc() once the height trigger is confirmed reliable. */
+function armDeadEndSafetyNet(){
+  clearTimeout(deadEndTimer);
+  deadEndTimer = setTimeout(function(){
+    if(cur === 'gate' && !submitDetected){
+      var c = document.getElementById('gateContinue');
+      if(c){ c.style.display = 'block'; dbg('dead-end safety net link shown (no trigger seen)'); }
+    }
+  }, DEAD_END_MS);
+}
+
+/* Manual link → same reveal path (guarded, no double-fire). */
+var _bsr = document.getElementById('btnShowResults');
+if(_bsr) _bsr.addEventListener('click', function(){ onGhlSubmit('manual-button'); });
+
+/* ── SUBMIT DETECTION via GHL messages ──────────────────────────────
+   (1) Explicit submit-type messages some embeds send.
+   (2) The height-collapse heuristic described above. */
 window.addEventListener('message', function(e){
   if(!e.data) return;
   var d = e.data;
   if(typeof d === 'string'){ try { d = JSON.parse(d); } catch(_){ d = { type: d }; } }
+
+  /* Ignore our own outgoing resize pings */
+  if(d && d.type === 'sth-resize') return;
+
+  /* (1) Explicit submit signals */
   var t = (d && (d.type || d.event || d.action || d.message)) || '';
   t = String(t).toLowerCase();
   if(t.indexOf('ghl-submitted') > -1 || t.indexOf('form-submit') > -1 ||
-     t.indexOf('formsubmit') > -1 || t === 'submitted'){
-    onLeadCaptured();
+     t.indexOf('formsubmit') > -1 || t.indexOf('onformsubmit') > -1 || t === 'submitted'){
+    onGhlSubmit('message:'+t);
+    return;
+  }
+
+  /* (2) Height-collapse detection — only while on the gate */
+  if(cur !== 'gate' || submitDetected) return;
+
+  var h = null;
+  if(typeof d === 'number' && d > 40) h = d;
+  else if(typeof d === 'object' && d){
+    h = d.height || d.frameHeight || d.scrollHeight || d.contentHeight || null;
+    if(typeof h !== 'number' || h < 40) h = null;
+  }
+  if(h === null) return;
+
+  if(h > formPeakH) formPeakH = h;
+  var dwell = Date.now() - gateShownAt;
+  dbg('GHL height', h, '| peak', formPeakH, '| dwell', dwell);
+
+  var collapsed = formPeakH >= COLLAPSE_MIN_FORM_H &&
+                  h <= formPeakH * COLLAPSE_RATIO &&
+                  dwell >= COLLAPSE_MIN_DWELL;
+
+  if(collapsed){
+    /* Debounce: confirm the collapse is real (not a one-frame blip) */
+    clearTimeout(collapseTimer);
+    collapseTimer = setTimeout(function(){
+      if(cur === 'gate' && !submitDetected){
+        onGhlSubmit('height-collapse '+h+'/'+formPeakH);
+      }
+    }, COLLAPSE_DEBOUNCE);
   }
 });
 
@@ -694,9 +789,11 @@ function startProc(){
   setTimeout(function(){
     document.getElementById('sp5').classList.remove('on');
     document.getElementById('sp5').classList.add('dn');
-    buildRes();          // compute results + pre-fill the GHL gate (results stay hidden)
-    goto('gate');        // show the lead-capture form
-    armGateFallback();   // reveal the manual "view results" link after a delay
+    buildRes();              // compute results + pre-fill the GHL gate (results stay hidden)
+    goto('gate');            // show the lead-capture form
+    gateShownAt = Date.now();// start the resize-sequence clock
+    formPeakH   = 0;         // reset the settled-form height learner
+    armDeadEndSafetyNet();   // last-resort only (45s) — never a premature button
   }, 4100);
 }
 
@@ -809,8 +906,7 @@ function buildRes(){
   };
 
   // Pre-fill the GHL gate form with the score data. Results remain hidden
-  // until the form is submitted — see onLeadCaptured(). The Meta Pixel 'Lead'
-  // event now fires on submission (in onLeadCaptured), not here.
+  // until the form is submitted — see onGhlSubmit()/onLeadCaptured().
   loadGHL();
 }
 
@@ -840,8 +936,8 @@ function loadGHL(){
       ghl.style.height = '650px';
     }
     /* Always re-send total height after GHL area is shown */
-    var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    window.parent.postMessage({type:'sth-resize', height:h}, '*');
+    var hh = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    window.parent.postMessage({type:'sth-resize', height:hh}, '*');
   }, 2000);
 }
 
@@ -859,10 +955,15 @@ function retake(){
   });
   document.getElementById('stArc').style.strokeDashoffset = '207.3';
 
-  // Reset GHL gate form + lead-capture state
+  // Reset GHL gate form + all lead-capture / trigger state
   var iframe = document.getElementById('msgsndr-etwO9iN0rTVDCCgIsXN8');
   if(iframe) iframe.src = 'https://api.upsurgepros.com/widget/form/etwO9iN0rTVDCCgIsXN8';
-  leadCaptured = false;
+  leadCaptured   = false;
+  submitDetected = false;
+  gateShownAt    = 0;
+  formPeakH      = 0;
+  clearTimeout(collapseTimer);
+  clearTimeout(deadEndTimer);
   var conf = document.getElementById('stConfirm');       if(conf) conf.style.display = 'none';
   var cont = document.getElementById('gateContinue');    if(cont) cont.style.display = 'none';
 
@@ -878,6 +979,10 @@ function retake(){
   the iframe height accordingly — no internal scrollbar needed.
   form_embed.js handles GHL iframe auto-height; our fallback
   catches any resize messages form_embed.js might miss.
+
+  NOTE: the submit-detection (height-collapse) logic lives in the
+  main script above; this block only mirrors GHL's height onto the
+  inner iframe element and reports our own total height upward.
 ============================================================ -->
 <script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
 <script>
